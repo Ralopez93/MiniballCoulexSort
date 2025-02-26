@@ -19,7 +19,7 @@ LIB_DIR     = ../lib
 COMMON_DIR  = ../common
 MBEVTS_DIR  = ../EventTree
 
-LIBS        := $(ROOTLIBS) -L$(LIB_DIR) -lCommandLineInterface -lmbevts
+LIBS        :=  $(ROOTLIBS) -L$(LIB_DIR) -lCommandLineInterface -lmbevts -ltrevts
 
 CC          := $(shell root-config --cc)
 CPP         := $(shell root-config --cxx)
@@ -42,12 +42,20 @@ all: MKDIR_P CLXAna
 MKDIR_P:
 	mkdir -p $(BIN_DIR) $(LIB_DIR)
 
-OBJECTS = g_clx.o \
+OBJECTS = Calibration.o \
+	 MBGeometry.o \
+	 g_clx.o \
           doppler.o \
           hists.o \
           SpedeGeometry.o \
-          CLXAnaDict.o
- 
+          CLXAnaDict.o 
+
+Calibration.o: Calibration.cc Calibration.hh
+	$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+MBGeometry.o: MBGeometry.cc MBGeometry.hh
+	$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
 CLXAna: CLXAna.cc $(OBJECTS)
 	$(CPP) $(CFLAGS) $(INCLUDES) $< $(OBJECTS) -o $@ $(LIBS)
 	$(CPP) -fPIC $(OBJECTS) $(SHAREDSWITCH)lib$@.so $(LIBS) -o $(LIB_DIR)/lib$@.so
@@ -59,27 +67,30 @@ g_clx.o: g_clx.cc g_clx.hh hists.cc hists.hh doppler.cc doppler.hh
 hists.o: hists.cc hists.hh doppler.cc doppler.hh
 	$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-doppler.o: doppler.cc doppler.hh
+doppler.o: doppler.cc doppler.hh 
 	$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 SpedeGeometry.o: SpedeGeometry.cc SpedeGeometry.hh
 	$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
 
 clean:
 	rm -f *.o
 	rm -f CLXAnaDict.cc CLXAnaDict$(DICTEXT)
 
 # Root stuff
-DEPENDENCIES = g_clx.hh \
+DEPENDENCIES =	Calibration.hh \
+		MBGeometry.hh \
+		g_clx.hh \
                doppler.hh \
                hists.hh \
                SpedeGeometry.hh \
-               RootLinkDef.h
+               RootLinkDef.h 
 
 CLXAnaDict.o: CLXAnaDict.cc
 	 $(CPP) $(CFLAGS) $(INCLUDES) -c $<
 
-CLXAnaDict.cc: $(DEPENDENCIES)
+CLXAnaDict.cc: $(DEPENDENCIES) 
 	 $(ROOTDICT) -f $@ -c $(INCLUDES) $(DEPENDENCIES)
 	 cp $(basename $@)$(DICTEXT) $(LIB_DIR)/
 	 cp $(basename $@)$(DICTEXT) $(BIN_DIR)/

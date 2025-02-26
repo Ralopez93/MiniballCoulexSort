@@ -697,8 +697,17 @@ void EventBuilder::BuildEvent() {
 					fBraggChamber = unpackedEvent->GetBraggChamber();
 
 				}
+				// clean laser on/off bits here
+				// for run 22 (done Aug. 30, 2024)
+				//				if (eventBuffer->GetSortedEvent(i)->GetTime() < 2626e6 || eventBuffer->GetSortedEvent(i)->GetTime() > 2700e6)
+				// for run 23 (done Aug. 30, 2024)
+				//				if (eventBuffer->GetSortedEvent(i)->GetTime() < 9030e6 || eventBuffer->GetSortedEvent(i)->GetTime() > 9828e6)
+				// for run 75 (done Aug. 30, 2024)
+				//if (!(eventBuffer->GetSortedEvent(i)->GetTime() > 4368e6 && eventBuffer->GetSortedEvent(i)->GetTime() < 4385e6) && !(eventBuffer->GetSortedEvent(i)->GetTime() > 5200e6 && eventBuffer->GetSortedEvent(i)->GetTime() < 6620e6))
+				//for run 145 (done Aug. 30, 2024)
+				//if (eventBuffer->GetSortedEvent(i)->GetTime() < 58.98e9 || eventBuffer->GetSortedEvent(i)->GetTime() > 59.2e9)
 
-				NumberOfBytesCommitted = OnBeamTree->Fill();
+				  NumberOfBytesCommitted = OnBeamTree->Fill();
 	      
 				if( Settings->VerboseLevel() > 1 ) {
 

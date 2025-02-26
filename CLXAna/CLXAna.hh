@@ -18,7 +18,7 @@ using namespace std;
 
 int j = 0;
 
-string outputfilename, configfilename, cutfilename;
+string outputfilename, configfilename, cutfilename, calfilename;
 vector<string> inputfilenames;
 
 float		GammaEnergy;
@@ -38,5 +38,6 @@ float		spededist = 23.6;	///< SPEDE to target distance in mm
 float		bg_frac = -1.0;		///< ratio of prompt and random background subtraction (negative)
 string      srim = "./srim";	///< directory containing the SRIM output files for Doppler correction
 bool		usekin = false;		///< Flag to use two-body kinematics for particle velocity
+int             clu_tune = -1; // Flag to choose cluster for angle tuning
 
 void PrintInput();

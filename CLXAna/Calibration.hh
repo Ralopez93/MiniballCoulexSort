@@ -103,7 +103,7 @@ private:
  
 	int fBeamdumpDgf;
 
-	ClassDef(Calibration, 1)
+  //  ClassDef(Calibration, 1)
    
 };
 

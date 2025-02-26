@@ -73,7 +73,7 @@ public:
 	};
 	
 	// Function to set Laser status
-	inline void SetLaser( bool l ){
+	inline void SetLaser( int l ){
 		laser_status = l;
 		return;
 	};
@@ -100,7 +100,7 @@ public:
 	inline unsigned int GetNf( unsigned int i ){ return Nf.at(i); };
 	inline unsigned int GetNb( unsigned int i ){ return Nb.at(i); };
 	inline long long GetTime( unsigned int i ){ return time.at(i); };
-	inline bool GetLaser( unsigned int i ){ return laser.at(i); };
+	inline int GetLaser( unsigned int i ){ return laser.at(i); };
 	
 	// Functions to get the barrel positions
 	int StripPosBarrel( float frontEn, float backEn );
@@ -154,7 +154,7 @@ private:
 	vector<int> Nf;					// Rings for CDs, strips for barrel
 	vector<int> Nb;					// Strips for CDs, pos for barrel
 	vector<long long> time;
-	vector<bool> laser;
+  vector<int> laser; //
 	
 	// Maximum energy and id
 	float maxfrontenergy_fcd, maxfrontenergy_bcd;
@@ -174,7 +174,7 @@ private:
 	unsigned int adc_ch2;
 	unsigned int adc_en2;
 	long long adc_t;
-	bool laser_status;
+	int laser_status;
 	
 	// Histograms
 	// diagnostics

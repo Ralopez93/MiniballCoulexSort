@@ -30,7 +30,7 @@ void mbevts::Initialise() {
 	gcor_cluid.resize(0);
 	gcor_tha.resize(0);
 	gcor_pha.resize(0);
-	gcor_gtd.resize(0);
+	gcor_gtd.resize(0);	
 	
 	pen.resize(0);
 	time.resize(0);
@@ -42,11 +42,12 @@ void mbevts::Initialise() {
 	sector.resize(0);
 	det.resize(0);
 	coin.resize(0);
+	laser.resize(0);
 	pr_ptr.resize(0);
 	rndm_ptr.resize(0);
 	del_ptr.resize(0);
 	
-	laser=-1;
+	//	laser=-1;
 	pr_hits=0;
 	rndm_hits=0;
 	del_hits=0;
@@ -94,130 +95,90 @@ void mbevts::CopyData( mbevts src ) {
 }
 
 void mbevts::SetGen( float en ) {
-	
-	gen=en;
-	
+  gen=en;	
 }
 
 void mbevts::SetCluid( int id ) {
-	
-	cluid=id;
-	
+  cluid=id;
 }
 
 void mbevts::SetCid( int id ) {
-	
-	cid=id;
-	
+  cid=id;
 }
 
 void mbevts::SetSid( int id ) {
-	
-	sid=id;
-	
+  sid=id;	
 }
 
 void mbevts::SetTheta( float theta ) {
-	
-	tha=theta;
-	
+  tha=theta;	
 }
 
 void mbevts::SetPhi( float phi ) {
-	
-	pha=phi;
-	
+  pha=phi;
 }
 
 void mbevts::SetCorGamGen( float en ) {
-	
-	gcor_gen.push_back( en );
-	
+  gcor_gen.push_back( en );
 }
 
 void mbevts::SetCorGamCluid( int id ) {
-	
-	gcor_cluid.push_back( id );
-	
+  gcor_cluid.push_back( id );	
 }
 
 void mbevts::SetCorGamCid( int id ) {
-	
-	gcor_cid.push_back( id );
-	
+  gcor_cid.push_back( id );	
 }
 
 void mbevts::SetCorGamSid( int id ) {
-	
-	gcor_sid.push_back( id );
-	
+  gcor_sid.push_back( id );	
 }
 
 void mbevts::SetCorGamTheta( float theta ) {
-	
-	gcor_tha.push_back( theta );
-	
+  gcor_tha.push_back( theta );	
 }
 
 void mbevts::SetCorGamPhi( float phi ) {
-	
-	gcor_pha.push_back( phi );
-	
+  gcor_pha.push_back( phi );	
 }
 
 void mbevts::SetCorGamGtd( float td ) {
-	
-	gcor_gtd.push_back( td );
-	
+  gcor_gtd.push_back( td );	
 }
 
+
 float mbevts::GetGen() {
-	
-	return gen;
-	
+  return gen;
 }
 
 int mbevts::GetCluid() {
-	
-	return cluid;
-
+  return cluid;
 }
 
 int mbevts::GetCid() {
-
-	return cid;
-
+  return cid;
 }
 
 int mbevts::GetSid() {
-
-	return sid;
-
+  return sid;
 }
 
 float mbevts::GetTheta() {
-
-	return tha;
-
+  return tha;
 }
 
 float mbevts::GetPhi() {
-
-	return pha;
-
+  return pha;
 }
 
+
 int mbevts::GetNrParts() {
-	
-	return pen.size();
-	
+  return pen.size();
 }
 
 int mbevts::GetNrPrompt() {
-	
-	return pr_hits;
-	
-}
+		return pr_hits;
+	}
 
 int mbevts::GetNrRandom() {
 	
@@ -263,8 +224,8 @@ int mbevts::GetSector( int nr ) {
 void mbevts::SetPart( float en, int f, int b, int s, double t, double ss, double t1, float ctd,
 							int co, int quad, int laserflag ) { 
 
-	laser=laserflag;
-	
+  //	laser=laserflag;
+  laser.push_back(laserflag);
 	pen.push_back( en );
 	nf.push_back( f );
 	nb.push_back( b );

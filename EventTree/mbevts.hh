@@ -15,7 +15,8 @@ public:
 	mbevts();
 	~mbevts();
 	void Initialise();
-	void SetGen(float en);
+  
+  	void SetGen(float en);
 	void SetTheta(float theta);
 	void SetPhi(float phi);
 	void SetCluid(int id);
@@ -28,17 +29,20 @@ public:
 	void SetCorGamCid(int id);
 	void SetCorGamSid(int id);
 	void SetCorGamGtd(float td);
+  
+  
 	void SetPart(float en, int f, int b, int s, double t, double ss, double t1, float ctd, int co, int quad, int laserflag);
 	void SearchCoin();
 	void CopyData( mbevts src );
 
-	// get functions
+	// get functions for gammas
 	int GetCluid();
 	int GetCid();
 	int GetSid();
 	float GetGen();
 	float GetTheta();
 	float GetPhi();
+    
 	float GetPen(int nr);
 	int GetNrParts();
 	int GetNrPrompt();
@@ -58,8 +62,10 @@ private:
 	int cluid;	///< Miniball cluster id (0-7)
 	float tha;	///< gamma-ray theta angle in radians
 	float pha;	///< gamma-ray phi angle in radians
+
+  
 	
-	// list of correlated gammas
+	// list of correlated singles gammas
 	vector <float> gcor_gen;
 	vector <int> gcor_cid;
 	vector <int> gcor_sid;
@@ -67,7 +73,7 @@ private:
 	vector <float> gcor_tha;
 	vector <float> gcor_pha;
 	vector <float> gcor_gtd;
-	
+
 	// particles
 	vector <float> pen;		///< particle energy
 	vector <double> time;	///< particle timestamp
@@ -79,7 +85,7 @@ private:
 	vector <int> sector;	///< sector of C-REX (0 = FCD; 1 = FBarrel; 2 = BBarrel; 3 = BCD)
 	vector <int> det;		///< CD quadrant (0-3)
 	vector <int> coin;		///< particle-gamma coincidence flag (0 = prompt; 1 = random; 2 = delayed)
-	int laser;				///< laser flag
+        vector <int> laser;				///< laser flag
 	int pr_hits;			///< number of prompt hits
 	int rndm_hits;			///< number of random hits
 	int del_hits;			///< number of delayed hits

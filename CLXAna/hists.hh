@@ -5,6 +5,7 @@
 #include "TH2.h"
 #include "TH3.h"
 #include "TMath.h"
+#include "TTree.h"
 #include "TObject.h"
 
 #include <iostream>
@@ -44,80 +45,111 @@ class hists {
 	public:
 
 	// Undoppler-corrected gamma spectra
-	TH1F *p, *r, *pmr;
-	TH1F *pB, *rB, *pBmrB;
-	TH1F *pT, *rT, *pTmrT;
-	TH1F *p_1B, *r_1B, *p_1T, *r_1T, *p_2h, *r_2h;
-	//TH2F *p_thetaB;
-	//TH2F *p_thetaT;
+// 	TH1F *p, *r, *pmr;
+// 	TH1F *pB, *rB, *pBmrB;
+// 	TH1F *pT, *rT, *pTmrT;
+// 	TH1F *p_1B, *r_1B, *p_1T, *r_1T, *p_2h, *r_2h;
+// 	//TH2F *p_thetaB;
+// 	//TH2F *p_thetaT;
 	
-	// Undoppler-corrected electron spectra
-	TH1F *pe, *re, *pemre;
-	TH1F *peB, *reB, *peBmreB;
-	TH1F *peT, *reT, *peTmreT;
-	TH1F *pe_1B, *re_1B, *pe_1T, *re_1T, *pe_2h, *re_2h;
+// 	// Undoppler-corrected electron spectra
+// 	TH1F *pe, *re, *pemre;
+// 	TH1F *peB, *reB, *peBmreB;
+// 	TH1F *peT, *reT, *peTmreT;
+// 	TH1F *pe_1B, *re_1B, *pe_1T, *re_1T, *pe_2h, *re_2h;
 	
-	// Coincidence matrices
-	TH2F *gg;
-	//TH2F *ge;
-	TH2F *gg_dcT, *gg_dcB;
-	TH2F *gg_user;
-	TH1F *gg_td, *ge_td;
-	TH1F *gcor_size;
+// 	// Coincidence matrices
+// 	TH2F *gg;
+// 	//TH2F *ge;
+// 	TH2F *gg_dcT, *gg_dcB;
+// 	TH2F *gg_user;
+// 	TH1F *gg_td, *ge_td;
+// 	TH1F *gcor_size;
 	 
-	// Background subtracted, Doppler corrected gamma spectra
-	TH1F *B_dcB, *B_dcT, *B_1hdcB, *B_1hdcT, *T_nodc;
-	TH1F *T_dcT, *T_dcB, *T_1hdcT, *T_1hdcB, *B_nodc;
-	TH1F *B_T1T_dcB, *B_T1T_dcT, *T_T1T_dcB, *T_T1T_dcT;
-	TH1F *B_T1T_dcB_p, *B_T1T_dcT_p, *T_T1T_dcB_p, *T_T1T_dcT_p;
-	TH1F *B_T1T_dcB_d, *B_T1T_dcT_d, *T_T1T_dcB_d, *T_T1T_dcT_d;
-//	TH2F *B_2D_T1T_dcB, *B_2D_T1T_dcT, *T_2D_T1T_dcB, *T_2D_T1T_dcT;
-	TH2F *T_dcB_x, *T_dcT_x, *T_nodc_x;
-	TH2F *B_dcB_x, *B_dcT_x, *B_nodc_x;
-	TH1F *T_del_2hdcB, *T_del_2h;
-	TH1F *gam_dcB, *gam_dcT, *T_2hdcB, *T_2hdcT;
-	TH2F *B_dcB_cid, *B_dcT_cid;
-	TH2F *T_dcB_cid, *T_dcT_cid;
+// 	// Background subtracted, Doppler corrected gamma spectra
+// 	TH1F *B_dcB, *B_dcT, *B_1hdcB, *B_1hdcT, *T_nodc;
+// 	TH1F *T_dcT, *T_dcB, *T_1hdcT, *T_1hdcB, *B_nodc;
+// 	TH1F *B_T1T_dcB, *B_T1T_dcT, *T_T1T_dcB, *T_T1T_dcT;
+// 	TH1F *B_T1T_dcB_p, *B_T1T_dcT_p, *T_T1T_dcB_p, *T_T1T_dcT_p;
+// 	TH1F *B_T1T_dcB_d, *B_T1T_dcT_d, *T_T1T_dcB_d, *T_T1T_dcT_d;
+// //	TH2F *B_2D_T1T_dcB, *B_2D_T1T_dcT, *T_2D_T1T_dcB, *T_2D_T1T_dcT;
+// 	TH2F *T_dcB_x, *T_dcT_x, *T_nodc_x;
+// 	TH2F *B_dcB_x, *B_dcT_x, *B_nodc_x;
+// 	TH1F *T_del_2hdcB, *T_del_2h;
+// 	TH1F *gam_dcB, *gam_dcT, *T_2hdcB, *T_2hdcT;
+// 	TH2F *B_dcB_cid, *B_dcT_cid;
+// 	TH2F *T_dcB_cid, *T_dcT_cid;
 
-	// Background subtracted, Doppler corrected electron spectra
-	TH1F *Be_dcB, *Be_dcT, *Be_1hdcB, *Be_1hdcT;
-	TH1F *Te_dcT, *Te_dcB, *Te_1hdcT, *Te_1hdcB;
-//	TH1F *Te_dcB_x[16], *Te_dcT_x[16];
-	TH1F *elec_dcB, *elec_dcT, *Te_2hdcB, *Te_2hdcT;
+// 	// Background subtracted, Doppler corrected electron spectra
+// 	TH1F *Be_dcB, *Be_dcT, *Be_1hdcB, *Be_1hdcT;
+// 	TH1F *Te_dcT, *Te_dcB, *Te_1hdcT, *Te_1hdcB;
+// //	TH1F *Te_dcB_x[16], *Te_dcT_x[16];
+// 	TH1F *elec_dcB, *elec_dcT, *Te_2hdcB, *Te_2hdcT;
    
-	// Prompt/Random Particle spectra
-	TH2F *part, *part1h, *part2h, *partQ[4];
-	TH2F *Bh, *Th, *B1h, *T1h, *B2h, *T2h;
-	TH1F *target_ev, *target_1pev, *target_2pev;
-#ifdef TWOPART
-	TH2F *BT[16], *TB[16];
-#endif
+// 	// Prompt/Random Particle spectra
+// 	TH2F *part, *part1h, *part2h, *partQ[4];
+// 	TH2F *Bh, *Th, *B1h, *T1h, *B2h, *T2h;
+// 	TH1F *target_ev, *target_1pev, *target_2pev;
+// #ifdef TWOPART
+// 	TH2F *BT[16], *TB[16];
+// #endif
 
-	// Second hit - simulated etc.
-	TH2F *Bsim, *Tsim;
-	TH2F *en2hit;
-	TH1F *sum2hit;
+// 	// Second hit - simulated etc.
+// 	TH2F *Bsim, *Tsim;
+// 	TH2F *en2hit;
+// 	TH1F *sum2hit;
 	
-	// Testing
-	TH1F *multp, *multr;
-	TH1F *velo, *velo2;
-	TH1F *GeReject, *GePass, *GeRatio;
-	TH2F *GeAng;
-#ifdef GEANG
-	TH2F *GeAng_clu[8];
-	TH3F *GeSiAng, *GeSiAng_clu[8];
-#endif
+// 	// Testing
+// 	TH1F *multp, *multr;
+// 	TH1F *velo, *velo2;
+// 	TH1F *GeReject, *GePass, *GeRatio;
+// 	TH2F *GeAng;
+// #ifdef GEANG
+// 	TH2F *GeAng_clu[8];
+// 	TH3F *GeSiAng, *GeSiAng_clu[8];
+// #endif
 
-	// gamma - particle time difference
-	TH1F *tdiff, *tdiff_e;
-	float tegate[4]; // Energy gates for tdiff spectra
-	TH1F *tdiffE[4], *tdiffQ[4]; // Energy and Quadrant gated
+// 	// gamma - particle time difference
+// 	TH1F *tdiff, *tdiff_e;
+// 	float tegate[4]; // Energy gates for tdiff spectra
+// 	TH1F *tdiffE[4], *tdiffQ[4]; // Energy and Quadrant gated
 
-	// particle - particle time difference
-	TH1F *tppdiff;
-	TH2F *tpp;
-	TH1F *tQQ[2];
+// 	// particle - particle time difference
+// 	TH1F *tppdiff;
+// 	TH2F *tpp;
+// 	TH1F *tQQ[2];
 
+  TTree  *tree; // JP: tree output for quick analysis
+  // tree branch variables
+  int laser; // 0 for laser off, 1 for laser on
+  int np;
+  double tdpp;
+  //  int b2p; // 0 for unbroken, 1 for broken 2p event
+  int pid[2];
+  int quad[2];
+  int ring[2];
+  int sect[2];
+  double ep[2];
+  double er[2];
+  double thp[2];
+  double php[2];
+  double thr[2];
+  double phr[2];
+	
+  int ng;
+  double td[24];
+  double eg[24]; // calibrated, not dc'ed gamma energy in keV
+  double ebg[24]; // calibrated and dc-ed gamma energy to beam kinematics in keV
+  double etg[24]; // calibrated and dc-ed gamma energy to target kinematics in keV
+  int clu[24];
+  int cry[24]; // crystal ID from 0 to 23
+  int seg[24]; // segment ID from 0 to 6 (0: core-only/ambiguous events)
+  double thg[24]; // theta of gamma in lab frame
+  double phg[24]; // phi of gamma in lab frame
+  int tpg[24]; // smallest particle-gamma time difference (if 2 particles)
+  double abg[24]; // angle difference between beam-like particle and gamma in degrees, 0-180
+  double atg[24]; // angle difference between target-like particle and gamma in degrees, 0-180
+  
 	// Variables to be set in g_clx.C via Set_xxx functions
 	float ppwin;
 	int maxrecoil;
@@ -136,38 +168,58 @@ class hists {
 	void Set_minrecoil( int user_minrecoil );
 
 	// fill functions
-	void Fill1h( float GEn, float GTh, float GPh, int GCid, vector <float> GCor_GEn, vector <float> GCor_GTh,
-				vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <float> GCor_Gtd,
-				bool electron, float PEn, int Pnf, int Pnb, int Psec, int Pquad, int T1T, float weight=1.0 );
-	void Fill2h( float GEn, float GTh, float GPh, int GCid, vector <float> GCor_GEn, vector <float> GCor_GTh,
-				vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <float> GCor_Gtd,
-				bool electron, vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec,
-				vector<int> Pquad, vector<int> Pptr, vector <float> td, int T1T, float weight=1.0 );
-	void FillDel2h( float GEn, float GTh, float GPh, int GCid, vector <float> PEn, vector<int> Pnf, vector<int> Pnb,
-					vector<int> Psec, vector<int> Pquad, vector<int> Pptr, vector <float> td, float weight=1.0 );
-	void FillGam1h( float GEn, float GTh, float GPh, int GCid, float PEn, int Pnf,
-					int Pnb, int Psec, int Pquad, int T1T, int cut, float weight=1.0 );
-	void FillGam2h( float GEn, float GTh, float GPh, int GCid, vector <float> PEn, vector<int> Pnf,
-					vector<int> Pnb, vector<int> Psec, vector<int> Pquad, int Bptr, int Tptr, int T1T,
-				    float weight=1.0 );
-	void FillElec1h( float GEn, float GTh, float GPh, int GCid, float PEn, int Pnf,
-					int Pnb, int Psec, int Pquad, int cut, float weight=1.0 );
-	void FillElec2h( float GEn, float GTh, float GPh, int GCid, vector <float> PEn, vector<int> Pnf,
-					vector<int> Pnb, vector<int> Psec, vector<int> Pquad, int Bptr, int Tptr, float weight=1.0 );
-	void FillGamGam1h( float GEn, float GTh, float GPh, int GCid, vector <float> GCor_GEn, vector <float> GCor_GTh,
-					vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <float> GCor_Gtd,
-					float PEn, int Pnf, int Pnb, int Psec, int Pquad, int T1T, int cut, float weight=1.0 );
-	void FillGamGam2h( float GEn, float GTh, float GPh, int GCid, vector <float> GCor_GEn, vector <float> GCor_GTh,
-					vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <float> GCor_Gtd,
-					vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec, vector<int> Pquad,
-					int Bptr, int Tptr, int T1T, float weight=1.0 );
-	void FillPar1h( float PEn, int Pnf, int Pnb, int Psec, int Pquad, int cut, float weight=1.0 );
-	void FillPar2h( vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec, vector<int> Pquad,
-					int Bptr, int Tptr, float weight=1.0 );
-	void AddSpectra( float bg_frac );
+  // fill Tree
+  void FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid, int GSid, vector <float> GCor_GEn, vector <float> GCor_GTh,
+		vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <int> GCor_GCid, vector <int> GCor_GSid,
+		vector <float> GCor_Gtd,
+		vector <int> Laser, vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec,
+		vector <int> Pquad, vector <float> Ptd);
+  
+  // fill 1-hit event (gamma and particle)
+  // 	void Fill1h( float GEn, float GTh, float GPh, int GCid, vector <float> GCor_GEn, vector <float> GCor_GTh,
+  // 				vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <float> GCor_Gtd,
+  // 				bool electron, float PEn, int Pnf, int Pnb, int Psec, int Pquad, int T1T, float weight=1.0 );
+  // // fill 2-hit event (gamma and particle)
+  // 	void Fill2h( float GEn, float GTh, float GPh, int GCid, vector <float> GCor_GEn, vector <float> GCor_GTh,
+  // 				vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <float> GCor_Gtd,
+  // 				bool electron, vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec,
+  // 				vector<int> Pquad, vector<int> Pptr, vector <float> td, int T1T, float weight=1.0 );
+  // // fill delayed 2-hit event
+  // 	void FillDel2h( float GEn, float GTh, float GPh, int GCid, vector <float> PEn, vector<int> Pnf, vector<int> Pnb,
+  // 					vector<int> Psec, vector<int> Pquad, vector<int> Pptr, vector <float> td, float weight=1.0 );
+  // // fill 1-particle hit event gammas
+  // 	void FillGam1h( float GEn, float GTh, float GPh, int GCid, float PEn, int Pnf,
+  // 					int Pnb, int Psec, int Pquad, int T1T, int cut, float weight=1.0 );
+  //   // fill 2-particle hit event gammas
+  // 	void FillGam2h( float GEn, float GTh, float GPh, int GCid, vector <float> PEn, vector<int> Pnf,
+  // 					vector<int> Pnb, vector<int> Psec, vector<int> Pquad, int Bptr, int Tptr, int T1T,
+  // 				    float weight=1.0 );
+  // 	void FillElec1h( float GEn, float GTh, float GPh, int GCid, float PEn, int Pnf,
+  // 					int Pnb, int Psec, int Pquad, int cut, float weight=1.0 );
+  // 	void FillElec2h( float GEn, float GTh, float GPh, int GCid, vector <float> PEn, vector<int> Pnf,
+  // 					vector<int> Pnb, vector<int> Psec, vector<int> Pquad, int Bptr, int Tptr, float weight=1.0 );
+  // // fill 1-particle hit event correlated gammas
+  // 	void FillGamGam1h( float GEn, float GTh, float GPh, int GCid, vector <float> GCor_GEn, vector <float> GCor_GTh,
+  // 					vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <float> GCor_Gtd,
+  // 					float PEn, int Pnf, int Pnb, int Psec, int Pquad, int T1T, int cut, float weight=1.0 );
+  // 	void FillGamGam2h( float GEn, float GTh, float GPh, int GCid, vector <float> GCor_GEn, vector <float> GCor_GTh,
+  // 					vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <float> GCor_Gtd,
+  // 					vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec, vector<int> Pquad,
+  // 					int Bptr, int Tptr, int T1T, float weight=1.0 );
+  // 	void FillPar1h( float PEn, int Pnf, int Pnb, int Psec, int Pquad, int cut, float weight=1.0 );
+  // 	void FillPar2h( vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec, vector<int> Pquad,
+  // 					int Bptr, int Tptr, float weight=1.0 );
+  // 	void AddSpectra( float bg_frac );
 		
 	private:
-
+  vector<int> laser_passed;
+  vector<float> PEn_passed;
+  vector<float> Pnf_passed;
+  vector<float> Pnb_passed;
+  vector<float> Pquad_passed;
+  vector<float> Psec_passed;
+  vector<float> Ptd_passed;
+  vector<int> Ppid_passed;
 	//ClassDef(hists,1);
 
 };

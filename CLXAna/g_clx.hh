@@ -36,6 +36,11 @@ using namespace std;
 # include "mbevts.hh"
 #endif
 
+#ifndef __TREVTS_HH__
+# include "trevts.hh"
+#endif
+
+
 /// Main class for gamma-particle coinidence analysis
 
 class g_clx : public TObject {
@@ -44,7 +49,7 @@ class g_clx : public TObject {
 	Int_t           fCurrent; //!current Tree number in a TChain
 	
 	// Declaration of leaf types
-	//mbevts          *mbevts;
+  // mbevts          *mbevts;
 	UInt_t          fUniqueID;
 	UInt_t          fBits;
 	float           gen;		///< gamma-ray energy in keV
@@ -70,7 +75,7 @@ class g_clx : public TObject {
 	vector <int>	sector;		///< sector of C-REX (0 = FCD; 1 = FBarrel; 2 = BBarrel; 3 = BCD)
 	vector <int>    det;		///< detector (quadrant) number of particle
 	vector <int>    coin;		///< coincidence flag: 0 = prompt, 1 = random, 2 = delayed, -1 = none
-	int             laser;		///< laser on/off flag: 1 = on, 0 = off
+        vector <int>    laser;		///< laser on/off flag: 1 = on, 0 = off
 	int             pr_hits;	///< number of prompt hits
 	int             rndm_hits;	///< number of random hits
 	int             del_hits;	///< number of delayed hits
@@ -94,7 +99,9 @@ class g_clx : public TObject {
 	TCutG			*Tcut;			///< Graphical cut for target-like particles
 	string			srim;			///< Directory containing the srim files
 	bool			usekin;			///< Flag to use two-body kinematics for particle velocity
-	
+  string                  calfile;
+    int             clu_tune;             // cluster for angle tuning (1 per process)
+
 	// List of branches
 	TBranch        *b_mbevts_fUniqueID;   //!
 	TBranch        *b_mbevts_fBits;   //!

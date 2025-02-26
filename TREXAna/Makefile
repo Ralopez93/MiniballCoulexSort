@@ -64,6 +64,7 @@ doppler.o: doppler.cc doppler.hh
 clean:
 	rm -f *.o
 	rm -f TREXAnaDict.cc TREXAnaDict$(DICTEXT)
+	rm TREXAna
 
 # Root stuff
 DEPENDENCIES = tr_ana.hh \

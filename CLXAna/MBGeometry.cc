@@ -228,7 +228,7 @@ void MBGeometry::SetupCluster() {
 		seg_offset[i].RotateZ(mytheta);
 	}
 	
-	// Shift Miniball so that target is at origin
+	// Shift Miniball so that target it as origin
 	mbzoffset.SetXYZ( -1.0*z, 0.0, 0.0 );
 	clu_offset += mbzoffset;
 	for( UInt_t i = 0; i < 3; i++ )  det_offset[i] += mbzoffset;

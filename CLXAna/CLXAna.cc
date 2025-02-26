@@ -23,6 +23,8 @@ void PrintInput() {
 	cout << "bg_frac = " << bg_frac << endl;
 	cout << "srim = " << srim << endl;
 	cout << "cutfile = " << cutfilename << endl;
+	cout << "calfile = " << calfilename << endl;
+	cout << "clu_tune = " << clu_tune << endl;
 	if( usekin ) cout << "Using two-body kinematics for particle velocity" << endl;
 	else cout << "Using detected particle energy for velocity calculation" << endl;
 	
@@ -56,6 +58,8 @@ int main( int argc, char *argv[] ) {
 	interface->Add("-bg_frac", "Ratio of prompt and random for background subtraction", &bg_frac );
 	interface->Add("-srim", "Directory containing the SRIM files", &srim );
 	interface->Add("-usekin", "Use two-body kinematics for particle velocity?", &usekin );
+	interface->Add("-cal", "Calibration file", &calfilename );
+	interface->Add("-clutune", "Cluster switch for angletuning", &clu_tune );
 
 	interface->CheckFlags( argc, argv );
 
@@ -74,7 +78,13 @@ int main( int argc, char *argv[] ) {
 		return 0;
 
 	}
+	
+	if( calfilename.size() <= 0 ) {
 
+		cout << "Did you specify your calibration file correctly?" << endl;
+		return 0;
+
+	}
 	// Make chain for g_clx
 	TChain *chain = new TChain( "g_clx", "" );
 	for( unsigned int i = 0; i < inputfilenames.size(); i++ ) {
@@ -190,7 +200,8 @@ int main( int argc, char *argv[] ) {
 		x.bg_frac = bg_frac;
 		x.srim = srim;
 		x.usekin = usekin;
-		
+		x.calfile = calfilename;
+		x.clu_tune = clu_tune;
 		cout << "Input parameters:" << endl;
 		PrintInput();
 

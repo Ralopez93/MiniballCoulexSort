@@ -133,8 +133,9 @@ public:
 	TH1F *adc, *dgf, *free_dgf, *cd_debug;
 	
 	// time differences
-	TH1F *tdiff_gp, *tdiff_ep, *tdiff_gg, *tdiff_pgg;
-	TH1F *tdiff_gp_q[4], *tdiff_BD;
+  TH1F *tdiff_gp, *tdiff_ep;
+  TH1F *tdiff_gg, *tdiff_pgg;
+  TH1F *tdiff_gp_q[4], *tdiff_BD;
 	
 	// gamma
 	TH2F *gg, *gg_pr, *gg_ran;
