@@ -234,9 +234,6 @@ bool doppler::stoppingpowers( string opt ) {
   cout<<"stopping powers defined"<<endl;
   TCanvas *c = new TCanvas();
   gSP[index]->Draw("A*");
-  //gSP[index]->GetXaxis()->SetTitleOffset(1.3);
-  //gSP[index]->GetYaxis()->SetTitleOffset(1.3);
-  //TGaxis::SetMaxDigits(3);
   string pdfname = srimfilename.substr( 0, srimfilename.find_last_of(".") ) + ".pdf";
   c->SetLogx();
   c->SaveAs( pdfname.c_str() );
@@ -465,9 +462,15 @@ float doppler::GetPTh( float nf, int sector ) {
   /// Returns theta angle from ann strip number in radians
 	
   float angle = 0.0;
-	
+  float angle_lower = 0.0;
+  float angle_upper = 0.0;
+
   // Forward CD - Standard CD
-  if( sector == 4 ) angle = TMath::ATan( ( 9.0 + (15.5-nf) * 2.0 ) / cddist );
+  if( sector == 4 ) {
+    angle = TMath::ATan( ( 9.0 + (15.5-nf) * 2.0 ) / cddist );
+    // angle_lower = TMath::ATan( ( 9.0 + (15.5-nf) * 2.0 - 1.0) / cddist );
+    // angle_upper = TMath::ATan( ( 9.0 + (15.5-nf) * 2.0 + 1.0 ) / cddist );
+  }
 	
   // Forward CD - CREX
   if( sector == 0 ) angle = TMath::ATan( ( 9.0 + (nf+0.5) * 2.0 ) / cddist );
@@ -481,6 +484,11 @@ float doppler::GetPTh( float nf, int sector ) {
   // Backwards CD
   if( sector == 3 ) angle = TMath::Pi() - TMath::ATan( ( 9.0 + (nf+0.5) * 2.0 ) / 64.0 );
 	
+  // std::cout << "Sector: " << sector
+  //           << "\tangle_lower: " << angle_lower
+  //           << "\tangle_upper: " << angle_upper 
+  //           << "\taverage: " << angle 
+  //           << std::endl;
   return angle;
 	
 }
@@ -552,10 +560,8 @@ float doppler::GetTTh( float Bnf, float BEn, int sector ) {
   } else {
     x = (y*y*epsilon*tau - TMath::Sqrt(-y*y*epsilon*epsilon*tau*tau + y*y + 1) ) / (1+y*y);
   }
-  //	cout << "Centre of mass angle: " << TMath::ACos(x)*TMath::RadToDeg() << endl;
   TTh = TMath::ATan( TMath::Sqrt( 1 - x*x ) / ( epsilon + x ) ); // choose kinematic branch using energy cut... as I haven't a clue how to do it any other way?!
   if( TTh < 0 ) TTh += TMath::Pi();
-  //	cout << "Simulated target angle: " << TTh*TMath::RadToDeg() << endl;
   return TTh;
 }
 
@@ -569,10 +575,8 @@ float doppler::GetBTh( float Tnf, int sector ) {
   float x, y, BTh;
   y = TMath::Tan(GetPTh(Tnf, sector)); // y = tan(Theta_targetlab)
   x = (y*y*epsilon - TMath::Sqrt(-y*y*epsilon*epsilon + y*y + 1) ) / (1+y*y);
-  //	cout << "Centre of mass angle: " << TMath::ACos(x)*TMath::RadToDeg() << endl;
   BTh = TMath::ATan( TMath::Sqrt( 1 - x*x ) / ( tau*epsilon + x ) );
   if( BTh < 0 ) BTh += TMath::Pi();
-  //	cout << "Simulated beam angle: " << BTh*TMath::RadToDeg() << endl;
   return BTh;
 
 }
