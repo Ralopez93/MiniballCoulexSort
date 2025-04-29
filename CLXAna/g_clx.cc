@@ -5,37 +5,39 @@
 
 #define g_clx_cxx
 
-// Select settings by uncommenting one of the following: 
-//#define TWOPART 		// define to plot every 2p combination
-//#define GEANG			// define for plotting Ge angles per cluster
-//#define SPEDEGEOMETRY	// define to overwrite Spede angles with SpedeGeometry routine
+// Select settings by uncommenting one of the following:
+// #define TWOPART 		// define to plot every 2p combination
+// #define GEANG			// define for plotting Ge angles per
+// cluster #define SPEDEGEOMETRY	// define to overwrite Spede angles with
+// SpedeGeometry routine
 
 #ifndef __SpedeGeometry_HH__
-# include "SpedeGeometry.hh"
+#include "SpedeGeometry.hh"
 #endif
 #ifndef hist_hh
-# include "hists.hh"
+#include "hists.hh"
 #endif
 #ifndef g_clx_hh
-# include "g_clx.hh"
+#include "g_clx.hh"
 #endif
 
-void g_clx::Loop( string outputfilename ) {
-  if( fChain == 0 ) return;
+void g_clx::Loop(string outputfilename) {
+  if (fChain == 0)
+    return;
 
-  // Output file name	
-  TFile *out = new TFile( outputfilename.c_str(), "RECREATE" );
+  // Output file name
+  TFile *out = new TFile(outputfilename.c_str(), "RECREATE");
 
   // Create doppler instance and set experimental parameters
   doppler dc;
-  dc.ExpDefs( Zb, Ab, Zt, At, Eb, Ex, thick, depth, cddist, cdoffset,
-	      deadlayer, contaminant, spededist, Bcut, Tcut, srim, usekin, calfile );
+  dc.ExpDefs(Zb, Ab, Zt, At, Eb, Ex, thick, depth, cddist, cdoffset, deadlayer,
+             contaminant, spededist, Bcut, Tcut, srim, usekin, calfile);
   dc.mbAngles(); // re-define MB angles
   // Create stopping power curves from the srim output files
   // Comment out to use the default parameters in doppler.hh
   // stoppingpowers( BT, TT, BA, TA, BC, TC )
-  if( !dc.stoppingpowers( true, true, true, true, false, false ) ){
-    cout<<"Definition of stopping powers failed"<<endl;
+  if (!dc.stoppingpowers(true, true, true, true, false, false)) {
+    cout << "Definition of stopping powers failed" << endl;
     return;
   }
   // Test if it's an electron or gamma
@@ -46,9 +48,9 @@ void g_clx::Loop( string outputfilename ) {
 
   // Declare the histograms here and initialise!
   hists h;
-  cout<<"initializing hists"<<endl;
-  h.Initialise( dc );
-  cout<<"Hists initialized"<<endl;
+  cout << "initializing hists" << endl;
+  h.Initialise(dc);
+  cout << "Hists initialized" << endl;
 
   // Particle-particle time difference (from tppdiff)
   h.Set_ppwin(100.);
@@ -70,9 +72,9 @@ void g_clx::Loop( string outputfilename ) {
   double spede_theta[24];
   double spede_phi[24];
 
-  SpedeGeometry spg;	
-  spg.SetupSpede( spede_r, spede_alpha );
-  for( unsigned int j = 0; j < 24; j++ ) { // loop over segments
+  SpedeGeometry spg;
+  spg.SetupSpede(spede_r, spede_alpha);
+  for (unsigned int j = 0; j < 24; j++) { // loop over segments
 
     spede_theta[j] = spg.GetSpedeTheta(j) * TMath::DegToRad();
     spede_phi[j] = spg.GetSpedePhi(j) * TMath::DegToRad();
@@ -80,64 +82,68 @@ void g_clx::Loop( string outputfilename ) {
 
 #endif
 
-  // Loop over events 
+  // Loop over events
   cout << "Looping over events...\n";
   Int_t nbytes = 0, nbs = 0;
-  Int_t skipFactor =1;
-  for( Long64_t jentry=0; jentry<fChain->GetEntries()/skipFactor; jentry++ ) {	
+  Int_t skipFactor = 1;
+  for (Long64_t jentry = 0; jentry < fChain->GetEntries() / skipFactor;
+       jentry++) {
 
     Long64_t ientry = LoadTree(jentry);
-    
-    if( ientry < 0 ) break;
 
-    nbs = fChain->GetEntry(jentry);   nbytes += nbs;
-    
-    if( jentry%5000==0 ){
-      cout << " " << jentry << "/" << fChain->GetEntries() << "  (" << jentry*100./fChain->GetEntries() << "%)    \r";
+    if (ientry < 0)
+      break;
+
+    nbs = fChain->GetEntry(jentry);
+    nbytes += nbs;
+
+    if (jentry % 5000 == 0) {
+      cout << " " << jentry << "/" << fChain->GetEntries() << "  ("
+           << jentry * 100. / fChain->GetEntries() << "%)    \r";
       cout << flush;
     }
-    if (clu_tune!=-1 && cluid!=clu_tune){
+    if (clu_tune != -1 && cluid != clu_tune) {
       continue;
     }
     // Is it an electron or gamma?
-    if( cluid < 8 ) electron = false;
-    else if( cluid == 8 ) electron = true;
-    else break; // shouldn't be anything else
+    if (cluid < 8)
+      electron = false;
+    else if (cluid == 8)
+      electron = true;
+    else
+      break; // shouldn't be anything else
 
 #ifdef SPEDEGEOMETRY
-    if( electron ) { // check if it's SPEDE/PAD
+    if (electron) { // check if it's SPEDE/PAD
 
-      if( cid == 0 ) { // spede
+      if (cid == 0) { // spede
 
-	tha = spede_theta[sid];
-	pha = spede_phi[sid];
+        tha = spede_theta[sid];
+        pha = spede_phi[sid];
 
-	for( unsigned int i = 0; i < gcor_gen.size(); i++ ){
-			
-	  if( gcor_cluid[i] != 8 || gcor_sid[i] < 0 || gcor_sid[i] > 23 ) continue; // not spede/PAD
-	  gcor_tha[i] = spede_theta[gcor_sid[i]];		// gcor_sid broken!
-	  gcor_pha[i] = spede_phi[gcor_sid[i]];		// gcor_sid broken!
-				
-	}
+        for (unsigned int i = 0; i < gcor_gen.size(); i++) {
+
+          if (gcor_cluid[i] != 8 || gcor_sid[i] < 0 || gcor_sid[i] > 23)
+            continue;                             // not spede/PAD
+          gcor_tha[i] = spede_theta[gcor_sid[i]]; // gcor_sid broken!
+          gcor_pha[i] = spede_phi[gcor_sid[i]];   // gcor_sid broken!
+        }
 
       }
-			
+
       else { // PAD
 
-	tha = dc.GetPTh( 10, 4 );
-	pha = dc.GetPPhi( cid-1, 6, 4 );
+        tha = dc.GetPTh(10, 4);
+        pha = dc.GetPPhi(cid - 1, 6, 4);
 
-	for( unsigned int i = 0; i < gcor_gen.size(); i++ ){
-			
-	  if( gcor_cluid[i] != 8 || gcor_sid[i] < 0 || gcor_sid[i] > 23 ) continue; // not spede/PAD
-	  gcor_tha[i] = spede_theta[gcor_sid[i]];		// gcor_sid broken!
-	  gcor_pha[i] = spede_phi[gcor_sid[i]];		// gcor_sid broken!
-				
-	}
+        for (unsigned int i = 0; i < gcor_gen.size(); i++) {
 
-
+          if (gcor_cluid[i] != 8 || gcor_sid[i] < 0 || gcor_sid[i] > 23)
+            continue;                             // not spede/PAD
+          gcor_tha[i] = spede_theta[gcor_sid[i]]; // gcor_sid broken!
+          gcor_pha[i] = spede_phi[gcor_sid[i]];   // gcor_sid broken!
+        }
       }
-
     }
 #endif
 
@@ -146,17 +152,17 @@ void g_clx::Loop( string outputfilename ) {
     // adjust MB angles according to cid, sid
     tha = dc.GetGTh(cid, sid);
     pha = dc.GetGPh(cid, sid);
-    for(int j = 0; j < gcor_gen.size(); j++){
+    for (int j = 0; j < gcor_gen.size(); j++) {
       gcor_tha[j] = dc.GetGTh(gcor_cid[j], gcor_sid[j]);
       gcor_pha[j] = dc.GetGPh(gcor_cid[j], gcor_sid[j]);
     }
-    
-    h.FillTree(gen, tha, pha, cluid, cid, sid, // single gamma
-	       gcor_gen, gcor_tha, gcor_pha, gcor_cluid, gcor_cid, gcor_sid, gcor_gtd, // correlated gamma
-	       laser, pen, nf, nb, sector, det, td); // particle info
-    
-  } // for (Long64_t jentry=0; jentry<fChain->GetEntries();jentry++)
-	
-  out->Write();
 
+    h.FillTree(gen, tha, pha, cluid, cid, sid, // single gamma
+               gcor_gen, gcor_tha, gcor_pha, gcor_cluid, gcor_cid, gcor_sid,
+               gcor_gtd,                             // correlated gamma
+               laser, pen, nf, nb, sector, det, td); // particle info
+
+  } // for (Long64_t jentry=0; jentry<fChain->GetEntries();jentry++)
+
+  out->Write();
 }
