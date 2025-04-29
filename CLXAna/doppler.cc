@@ -468,8 +468,8 @@ float doppler::GetPTh( float nf, int sector ) {
   // Forward CD - Standard CD
   if( sector == 4 ) {
     angle = TMath::ATan( ( 9.0 + (15.5-nf) * 2.0 ) / cddist );
-    // angle_lower = TMath::ATan( ( 9.0 + (15.5-nf) * 2.0 - 1.0) / cddist );
-    // angle_upper = TMath::ATan( ( 9.0 + (15.5-nf) * 2.0 + 1.0 ) / cddist );
+    angle_lower = TMath::ATan( ( 9.0 + (15.5-nf) * 2.0 - 1.0) / cddist );
+    angle_upper = TMath::ATan( ( 9.0 + (15.5-nf) * 2.0 + 1.0 ) / cddist );
   }
 	
   // Forward CD - CREX
@@ -484,11 +484,11 @@ float doppler::GetPTh( float nf, int sector ) {
   // Backwards CD
   if( sector == 3 ) angle = TMath::Pi() - TMath::ATan( ( 9.0 + (nf+0.5) * 2.0 ) / 64.0 );
 	
-  // std::cout << "Sector: " << sector
-  //           << "\tangle_lower: " << angle_lower
-  //           << "\tangle_upper: " << angle_upper 
-  //           << "\taverage: " << angle 
-  //           << std::endl;
+  std::cout << "Sector: " << sector
+            << "\tangle_lower: " << angle_lower
+            << "\tangle_upper: " << angle_upper 
+            << "\taverage: " << angle 
+            << std::endl;
   return angle;
 	
 }
