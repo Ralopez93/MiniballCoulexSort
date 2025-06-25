@@ -86,8 +86,7 @@ void g_clx::Loop(string outputfilename) {
   cout << "Looping over events...\n";
   Int_t nbytes = 0, nbs = 0;
   Int_t skipFactor = 1;
-  for (Long64_t jentry = 0; jentry < fChain->GetEntries() / skipFactor;
-       jentry++) {
+  for (Long64_t jentry = 0; jentry < fChain->GetEntries() / skipFactor; jentry++) {
 
     Long64_t ientry = LoadTree(jentry);
 

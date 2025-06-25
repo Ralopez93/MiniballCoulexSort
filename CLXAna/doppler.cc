@@ -346,6 +346,7 @@ int doppler::Cut_2p(float PEn1, float nf1, int quad1, int sector1, float PEn2,
   }
 
   // normal kinematics without Beam/Target separation
+  // ??? This never occurs, why is it here?
   else if (0 == 1) {
 
     if (Cut(PEn2, nf2, quad2, sector2) > 0 &&
@@ -475,9 +476,13 @@ float doppler::GetPTh(float nf, int sector) {
 
   // Forward CD - Standard CD
   if (sector == 4) {
-    angle = TMath::ATan((9.0 + (15.5 - nf) * 2.0) / cddist);
+    // Originally: angle = TMath::ATan((9.0 + (15.5 - nf) * 2.0) / cddist);
+    // r0 = 9.0 mm 
+    // nf is ring number, goes from 0 to 15.
+    // So for example, r1 = r0 + 0.5 * 2 (basically adding half the pitch), with boundaries +- 1 mm
     angle_lower = TMath::ATan((9.0 + (15.5 - nf) * 2.0 - 1.0) / cddist);
     angle_upper = TMath::ATan((9.0 + (15.5 - nf) * 2.0 + 1.0) / cddist);
+    angle = gRandom->Uniform(angle_lower, angle_upper);
   }
 
   // Forward CD - CREX
