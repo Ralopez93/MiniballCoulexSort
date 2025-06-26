@@ -130,7 +130,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
   // passed vector is ordered in quadrants from 0 to 3
 
   // 1-particle case, PID identified
-  if (np_passed == 1) { // Here [0] signifies the detected particle.
+  if (np_passed == 1) { // Here [0] signifies the detected particle. Can be beam or target.
     np = 1;
     tdpp = 0.;
     laser = laser_passed[0];
@@ -223,14 +223,14 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
         TMath::Abs(Ptd_passed[0] - Ptd_passed[1]); // 2p time difference in ns
     int quad_diff = TMath::Abs(Pquad_passed[0] - Pquad_passed[1]); // quadrant number difference
 
-    // returns 0 for target-beam passed, 1 for beam/target passed, -1 for small 2p angles
+    // returns 0 for target/beam passed, 1 for beam/target passed, -1 for small 2p angles
     // (ring > 10 (innermost = 16) for both)
     int cut2 = dc.Cut_2p(PEn_passed[0], Pnf_passed[0], Pquad_passed[0], Psec_passed[0],
                          PEn_passed[1], Pnf_passed[1], Pquad_passed[1], Psec_passed[1]);  
 
     if (quad_diff == 2 && time_diff <= ppwin && cut2 >= 0) { // we have good 2p candidate
       int ib, it;
-      // Why use ib and it, and not Ppid_passed?
+
       if (cut2 == 0) { // target is [0]
         ib = 1;
         it = 0;
@@ -269,8 +269,10 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       phr[1] = php[0];
 
       // Correct PID scheme?
-      pid[0] = Ppid_passed[ib];
-      pid[1] = Ppid_passed[it];
+      // pid[0] = Ppid_passed[ib];
+      // pid[1] = Ppid_passed[it];
+      pid[0] = ib;
+      pid[1] = it;
 
       ng = 1 + GCor_GEn.size();
       td[0] = 0.5 * (Ptd_passed[0] + Ptd_passed[1]); // average
