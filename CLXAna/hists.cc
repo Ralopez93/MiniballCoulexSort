@@ -18,6 +18,9 @@
 #include "hists.hh"
 #endif
 
+#define PID_BEAM 0
+#define PID_TARG 1
+
 void hists::Initialise(doppler dc_) {
 
   /// Initialise all of the histograms that you want to fill
@@ -271,8 +274,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       // Correct PID scheme?
       // pid[0] = Ppid_passed[ib];
       // pid[1] = Ppid_passed[it];
-      pid[0] = ib;
-      pid[1] = it;
+      pid[0] = PID_BEAM;
+      pid[1] = PID_TARG;
 
       ng = 1 + GCor_GEn.size();
       td[0] = 0.5 * (Ptd_passed[0] + Ptd_passed[1]); // average
