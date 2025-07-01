@@ -127,7 +127,7 @@ void g_clx::Loop(string outputfilename) {
                gcor_gtd,                             // correlated gamma
                laser, pen, nf, nb, sector, det, td); // particle info
 
-  } // for (Long64_t jentry=0; jentry<fChain->GetEntries();jentry++)
+  }
 
   out->Write();
 }
