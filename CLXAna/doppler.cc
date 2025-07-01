@@ -477,6 +477,7 @@ float doppler::GetPTh(float nf, int sector) {
   // Forward CD - Standard CD
   if (sector == 4) {
     // Originally: angle = TMath::ATan((9.0 + (15.5 - nf) * 2.0) / cddist);
+    // Now spreading out the events over the strip using norm. distribution.
     // r0 = 9.0 mm 
     // nf is ring number, goes from 0 to 15.
     // So for example, r1 = r0 + 0.5 * 2 (basically adding half the pitch), with boundaries +- 1 mm
@@ -501,9 +502,7 @@ float doppler::GetPTh(float nf, int sector) {
   if (sector == 3)
     angle = TMath::Pi() - TMath::ATan((9.0 + (nf + 0.5) * 2.0) / 64.0);
 
-  std::cout << "Sector: " << sector << "\tangle_lower: " << angle_lower
-            << "\tangle_upper: " << angle_upper << "\taverage: " << angle
-            << std::endl;
+
   return angle;
 }
 
