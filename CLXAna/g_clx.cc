@@ -40,7 +40,7 @@ void g_clx::Loop(string outputfilename) {
     cout << "Definition of stopping powers failed" << endl;
     return;
   }
-  // Test if it's an electron or gamma
+  // Test if it's an electron or gamma. Note: currently unused?
   bool electron;
 
   // Include errors on histograms (required for correct bg subtraction)
@@ -86,13 +86,16 @@ void g_clx::Loop(string outputfilename) {
     if (clu_tune != -1 && cluid != clu_tune) {
       continue;
     }
-    // Is it an electron or gamma?
+
+    // Is it an electron or gamma? Note: unused?
     if (cluid < 8)
       electron = false;
     else if (cluid == 8)
       electron = true;
-    else
+    else {
+      cout << "Unexpected cluid: " << cluid << endl;
       break; // shouldn't be anything else
+    }
 
     // fill CLX tree according to standard convention
 
@@ -105,8 +108,7 @@ void g_clx::Loop(string outputfilename) {
     }
 
     h.FillTree(gen, tha, pha, cluid, cid, sid, // single gamma
-               gcor_gen, gcor_tha, gcor_pha, gcor_cluid, gcor_cid, gcor_sid,
-               gcor_gtd,                             // correlated gamma
+               gcor_gen, gcor_tha, gcor_pha, gcor_cluid, gcor_cid, gcor_sid, gcor_gtd, // correlated gamma
                laser, pen, nf, nb, sector, det, td); // particle info
 
   }
