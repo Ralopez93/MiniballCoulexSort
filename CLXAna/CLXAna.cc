@@ -35,6 +35,21 @@ void PrintInput() {
   return;
 }
 
+void PrintAngles() {
+  cout << "Printing CD angles...\n" << endl;
+  cout << "Lower\tMid\tUpper" << endl;
+
+  for (int i = 0; i < 16; i++) {
+    double angle_mid = TMath::ATan((9.0 + (0.5 + i) * 2.0) / cddist);
+    double angle_lower = TMath::ATan((9.0 + (0.5 + i) * 2.0 - 1.0) / cddist);
+    double angle_upper = TMath::ATan((9.0 + (0.5 + i) * 2.0 + 1.0) / cddist);
+
+    cout << fixed << setprecision(4) << angle_lower << "\t" << angle_mid << "\t" << angle_upper << endl;
+  }
+
+  cout << "" << endl;
+}
+
 int main(int argc, char *argv[]) {
 
   CommandLineInterface *interface = new CommandLineInterface();
@@ -52,25 +67,30 @@ int main(int argc, char *argv[]) {
   interface->Add("-thick", "Target thickness (mg/cm^2)", &thick);
   interface->Add("-depth", "Depth of interation in target (mg/cm^2)", &depth);
   interface->Add("-cddist", "Relative distance of CD and target (mm)", &cddist);
-  interface->Add("-cdoffset",
-                 "Rotation of CD detector about phi from vertical (deg)",
-                 &cdoffset);
+  interface->Add("-cdoffset", "Rotation of CD detector about phi from vertical (deg)", &cdoffset);
   interface->Add("-deadlayer", "Thickness of Si dead layer (mm)", &deadlayer);
-  interface->Add("-contaminant",
-                 "Thickness of contaminant layer on target (mg/cm^2)",
-                 &contaminant);
-  interface->Add("-spededist", "Relative distance of SPEDE and target (mm)",
-                 &spededist);
-  interface->Add("-bg_frac",
-                 "Ratio of prompt and random for background subtraction",
-                 &bg_frac);
+  interface->Add("-contaminant", "Thickness of contaminant layer on target (mg/cm^2)", &contaminant);
+  interface->Add("-spededist", "Relative distance of SPEDE and target (mm)", &spededist);
+  interface->Add("-bg_frac", "Ratio of prompt and random for background subtraction", &bg_frac);
   interface->Add("-srim", "Directory containing the SRIM files", &srim);
-  interface->Add("-usekin", "Use two-body kinematics for particle velocity?",
-                 &usekin);
+  interface->Add("-usekin", "Use two-body kinematics for particle velocity?", &usekin);
   interface->Add("-cal", "Calibration file", &calfilename);
   interface->Add("-clutune", "Cluster switch for angletuning", &clu_tune);
+  interface->Add("-print_angles", "Print CD angles only", &print_angles);
 
   interface->CheckFlags(argc, argv);
+
+  if (print_angles) {
+    if (cddist <= 0) {
+      cout << "Tried printing angles, but invalid CD dist value: " << cddist << endl;
+      return EXIT_FAILURE;
+    }
+
+    PrintAngles();
+
+    cout << "Finished printing angles." << endl;
+    return EXIT_SUCCESS;
+  }
 
   // Test if output file is there
   if (outputfilename.size() <= 0) {
@@ -107,8 +127,7 @@ int main(int argc, char *argv[]) {
     size_t sep1 = cutfilename.find_first_of(":");
     size_t sep2 = cutfilename.find_last_of(":");
 
-    if (sep1 <= 1 || sep2 <= 1 || sep1 > cutfilename.size() ||
-        sep2 > cutfilename.size()) {
+    if (sep1 <= 1 || sep2 <= 1 || sep1 > cutfilename.size() || sep2 > cutfilename.size()) {
 
       cout << "Format for the cutfile should be <cutfile.root>:<Bcut>:<Tcut>\n";
       cout << "where <Bcut> and <Tcut> are the TCutG names of the beam and\n";
@@ -119,8 +138,7 @@ int main(int argc, char *argv[]) {
 
     string str_file = cutfilename.substr(0, sep1);
     string str_bcut = cutfilename.substr(sep1 + 1, sep2 - sep1 - 1);
-    string str_tcut =
-        cutfilename.substr(sep2 + 1, cutfilename.size() - sep2 - 1);
+    string str_tcut = cutfilename.substr(sep2 + 1, cutfilename.size() - sep2 - 1);
 
     TFile *fcut = new TFile(str_file.c_str());
 
@@ -149,11 +167,8 @@ int main(int argc, char *argv[]) {
     x.Bcut = (TCutG *)fcut->Get(str_bcut.c_str());
     x.Tcut = (TCutG *)fcut->Get(str_tcut.c_str());
 
-  }
-
-  // if not cut file given, make empty cuts
-  else {
-
+  } else {
+    // if not cut file given, make empty cuts
     x.Bcut = new TCutG();
     x.Tcut = new TCutG();
   }
@@ -181,11 +196,8 @@ int main(int argc, char *argv[]) {
     usekin = config->GetValue("usekin", false);
   }
 
-  // Parameters are already read from the command line if not overwritten by
-  // config file
-  if (Zb > 0 && Zt > 0 && Ab > 0 && At > 0 && Eb > 0 && Ex > 0 && thick > 0 &&
-      depth > 0 && cddist > 0) {
-
+  // Parameters are already read from the command line if not overwritten by config file.
+  if (Zb > 0 && Zt > 0 && Ab > 0 && At > 0 && Eb > 0 && Ex > 0 && thick > 0 && depth > 0 && cddist > 0) {
     // Setup the experimental parameters
     // x.SetExpDefs( Zb, Ab, Zt, At, Eb, Ex, thick, depth, cddist, cdoffset );
     x.Zb = Zb;
@@ -208,12 +220,8 @@ int main(int argc, char *argv[]) {
     x.clu_tune = clu_tune;
     cout << "Input parameters:" << endl;
     PrintInput();
-
-  }
-
-  // In case something is missing, print out what we have and quit
-  else {
-
+  } else {
+    // In case something is missing, print out what we have and quit
     cout << "Some input is missing, please check:" << endl;
     PrintInput();
     cout << "Exiting..." << endl;
