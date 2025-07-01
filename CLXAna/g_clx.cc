@@ -64,24 +64,6 @@ void g_clx::Loop(string outputfilename) {
   // i.e. strips that are >= minrecoil are unsafe. Only low CoM solution is safe
   h.Set_minrecoil(0);
 
-  // New angles defined by Spede geometry
-#ifdef SPEDEGEOMETRY
-  double spede_r = dc.GetSpedeDist();
-  double spede_alpha = 0.0;
-
-  double spede_theta[24];
-  double spede_phi[24];
-
-  SpedeGeometry spg;
-  spg.SetupSpede(spede_r, spede_alpha);
-  for (unsigned int j = 0; j < 24; j++) { // loop over segments
-
-    spede_theta[j] = spg.GetSpedeTheta(j) * TMath::DegToRad();
-    spede_phi[j] = spg.GetSpedePhi(j) * TMath::DegToRad();
-  }
-
-#endif
-
   // Loop over events
   cout << "Looping over events...\n";
   Int_t nbytes = 0, nbs = 0;
