@@ -112,40 +112,6 @@ void g_clx::Loop(string outputfilename) {
     else
       break; // shouldn't be anything else
 
-#ifdef SPEDEGEOMETRY
-    if (electron) { // check if it's SPEDE/PAD
-
-      if (cid == 0) { // spede
-
-        tha = spede_theta[sid];
-        pha = spede_phi[sid];
-
-        for (unsigned int i = 0; i < gcor_gen.size(); i++) {
-
-          if (gcor_cluid[i] != 8 || gcor_sid[i] < 0 || gcor_sid[i] > 23)
-            continue;                             // not spede/PAD
-          gcor_tha[i] = spede_theta[gcor_sid[i]]; // gcor_sid broken!
-          gcor_pha[i] = spede_phi[gcor_sid[i]];   // gcor_sid broken!
-        }
-
-      }
-
-      else { // PAD
-
-        tha = dc.GetPTh(10, 4);
-        pha = dc.GetPPhi(cid - 1, 6, 4);
-
-        for (unsigned int i = 0; i < gcor_gen.size(); i++) {
-
-          if (gcor_cluid[i] != 8 || gcor_sid[i] < 0 || gcor_sid[i] > 23)
-            continue;                             // not spede/PAD
-          gcor_tha[i] = spede_theta[gcor_sid[i]]; // gcor_sid broken!
-          gcor_pha[i] = spede_phi[gcor_sid[i]];   // gcor_sid broken!
-        }
-      }
-    }
-#endif
-
     // fill CLX tree according to standard convention
 
     // adjust MB angles according to cid, sid
