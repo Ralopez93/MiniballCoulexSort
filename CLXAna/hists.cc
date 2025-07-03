@@ -120,8 +120,10 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
   Psec_passed.resize(0);
   Ptd_passed.resize(0);
   Ppid_passed.resize(0);
+
   for (int i = 0; i < PEn.size(); i++) {
     int pid = dc.Cut(PEn[i], Pnf[i], Psec[i]);
+
     if (pid >= 0) {
       laser_passed.push_back(Laser[i]);
       PEn_passed.push_back(PEn[i]);
@@ -132,10 +134,12 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       Ptd_passed.push_back(Ptd[i]);
 
       // JP convention: Target PID == 1, Beam PID == 0.
-      if (pid == 0)
+      if (pid == PID_BEAM)
+        Ppid_passed.push_back(PID_BEAM);
+      else if (PID_TARG)
         Ppid_passed.push_back(PID_TARG);
       else
-        Ppid_passed.push_back(PID_BEAM);
+        throw std::runtime_error("Invalid PID");
     }
   }
 
@@ -229,21 +233,23 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
     float time_diff = TMath::Abs(Ptd_passed[0] - Ptd_passed[1]); // 2p time difference in ns
     int quad_diff = TMath::Abs(Pquad_passed[0] - Pquad_passed[1]); // quadrant number difference
 
-    // returns 0 for target/beam passed, 1 for beam/target passed, -1 for small 2p angles
-    // (ring > 10 (innermost = 16) for both)
+    // returns 0 for beam/target passed, 1 for target/beam passed, 
+    // -1 for small 2p angles (ring > 10 (innermost = 16) for both)?
     int cut2 = dc.Cut_2p(PEn_passed[0], Pnf_passed[0], Psec_passed[0],
                          PEn_passed[1], Pnf_passed[1], Psec_passed[1]);  
 
     if ((quad_diff == 2) && (time_diff <= ppwin) && (cut2 >= 0)) { // we have good 2p candidate
       int ib, it;
 
-      if (cut2 == 0) { // target is [0]
-        ib = 1;
-        it = 0;
-      } else { // target is [1]
+      if (cut2 == PID_BEAM) {
         ib = 0;
         it = 1;
-      }
+      } else if (cut2 == PID_TARG){
+        ib = 1;
+        it = 0;
+      } else
+        throw std::runtime_error("Invalid PID");
+
       laser = laser_passed[ib];
       np = 2;
       tdpp = Ptd_passed[it] - Ptd_passed[ib];
@@ -519,13 +525,14 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
     // fill matched 2p events
     for (int j = 0; j < v2p.size(); j++) {
       int ib, it;
-      if (v2p_cut2[j] == 0) { // target is [0]
-        ib = v2p[j].second;
-        it = v2p[j].first;
-      } else { // target is [1]
+      if (v2p_cut2[j] == PID_BEAM) {
         ib = v2p[j].first;
         it = v2p[j].second;
-      }
+      } else if (PID_TARG) {
+        ib = v2p[j].second;
+        it = v2p[j].first;
+      } else
+        throw std::runtime_error("Invalid PID");
       laser = laser_passed[ib]; // take ib as default
       np = 2;
       tdpp = Ptd_passed[it] - Ptd_passed[ib];

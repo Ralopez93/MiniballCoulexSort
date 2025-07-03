@@ -5,6 +5,10 @@
 #include "doppler.hh"
 #endif
 
+#define PID_UNKNOWN -1
+#define PID_BEAM 0
+#define PID_TARG 1
+
 TRandom3 doppler::rand = 1;
 
 void doppler::ExpDefs(int Zb_, float Ab_, int Zt_, float At_, float Eb_,
@@ -260,21 +264,21 @@ bool doppler::stoppingpowers(string opt) {
  * @param PEn 
  * @param nf 
  * @param sector 
- * @return 1 for projectile, 0 for target, -1 if outside gates.
+ * @return PID of particle, -1 if outside gates.
  */
 int doppler::Cut(float PEn, float nf, int sector) {
 
-  int identity = -1;
+  int identity = PID_UNKNOWN;
   float ang = GetPTh(nf, sector) * TMath::RadToDeg();
 
   // Graphical cuts given at command line
   if (Bcut->GetN() > 0 && Tcut->GetN() > 0) {
 
     if (Bcut->IsInside(ang, PEn / 1000.))
-      identity = 1;
+      identity = PID_BEAM;
 
     else if (Tcut->IsInside(ang, PEn / 1000.))
-      identity = 0;
+      identity = PID_TARG;
 
   } else
     throw std::runtime_error("Graphical cuts are not available!");
@@ -293,17 +297,17 @@ int doppler::Cut(float PEn, float nf, int sector) {
  * @param PEn2 Energy for particle 2.
  * @param nf2 Annular (front) strip ID for particle 2.
  * @param sector2 Sector for particle 2.
- * @return 1 if target is p1, 2 if target is p2, -1 if condition is not fulfilled 
+ * @return PID of first particle or -1 if conditions are not fulfilled.
  */
 int doppler::Cut_2p(float PEn1, float nf1, int sector1,
                     float PEn2, float nf2, int sector2) {
 
-  int identity = -1;
+  int identity = PID_UNKNOWN;
 
-  if ((Cut(PEn1, nf1, sector1) == 0) && (Cut(PEn2, nf2, sector2) == 1))
-    identity = 0; // target is particle number 1
-  else if ((Cut(PEn1, nf1, sector1) == 1) && (Cut(PEn2, nf2, sector2) == 0))
-    identity = 1; // target is particle number 2
+  if ((Cut(PEn1, nf1, sector1) == PID_BEAM) && (Cut(PEn2, nf2, sector2) == PID_TARG))
+    identity = PID_BEAM;
+  else if ((Cut(PEn1, nf1, sector1) == PID_TARG) && (Cut(PEn2, nf2, sector2) == PID_BEAM))
+    identity = PID_TARG;
 
     // JP: test and check later
     // If the angle is small, it's unlikely to be a real 2h event
