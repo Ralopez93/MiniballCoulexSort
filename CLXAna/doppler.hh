@@ -49,9 +49,9 @@ public:
 		 float depth_, float cddist_, float cdoffset_, float deadlayer_,
 		 float contaminant_, float spededist_, TCutG *Bcut_, TCutG *Tcut_,
 		 string srimfile_, bool usekin_, string calfile_ );
-  int		Cut( float PEn, float anno, int quad, int sector );
-  int		Cut_2p( float PEn1, float anno1, int quad1, int sector1,
-			float PEn2, float anno2, int quad2, int sector2 );
+  int Cut(float PEn, float anno, int sector );
+  int Cut_2p(float PEn1, float anno1, int sector1,
+			       float PEn2, float anno2, int sector2 );
   bool	CutG_en2hit( float BEn, float TEn );
   int		GetZb();
   int		GetZt();

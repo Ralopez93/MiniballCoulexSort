@@ -122,7 +122,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
   Ptd_passed.resize(0);
   Ppid_passed.resize(0);
   for (int i = 0; i < PEn.size(); i++) {
-    int pid = dc.Cut(PEn[i], Pnf[i], Pquad[i], Psec[i]);
+    int pid = dc.Cut(PEn[i], Pnf[i], Psec[i]);
     if (pid >= 0) {
       laser_passed.push_back(Laser[i]);
       PEn_passed.push_back(PEn[i]);
@@ -240,8 +240,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
 
     // returns 0 for target/beam passed, 1 for beam/target passed, -1 for small 2p angles
     // (ring > 10 (innermost = 16) for both)
-    int cut2 = dc.Cut_2p(PEn_passed[0], Pnf_passed[0], Pquad_passed[0], Psec_passed[0],
-                         PEn_passed[1], Pnf_passed[1], Pquad_passed[1], Psec_passed[1]);  
+    int cut2 = dc.Cut_2p(PEn_passed[0], Pnf_passed[0], Psec_passed[0],
+                         PEn_passed[1], Pnf_passed[1], Psec_passed[1]);  
 
     if (quad_diff == 2 && time_diff <= ppwin && cut2 >= 0) { // we have good 2p candidate
       int ib, it;
@@ -430,8 +430,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
 
         // returns 0 for target-beam passed, 1 for beam/target passed, -1 for small 2p angles
         // (ring > 10 (innermost = 16) for both)
-        int cut2 = dc.Cut_2p(PEn_passed[j], Pnf_passed[j], Pquad_passed[j], Psec_passed[j],
-                             PEn_passed[k], Pnf_passed[k], Pquad_passed[k], Psec_passed[k]); 
+        int cut2 = dc.Cut_2p(PEn_passed[j], Pnf_passed[j], Psec_passed[j],
+                             PEn_passed[k], Pnf_passed[k], Psec_passed[k]); 
 
         if (quad_diff == 2 && time_diff <= ppwin && cut2 >= 0) { // we have good 2p candidate
           v2p.push_back(make_pair(j, k));

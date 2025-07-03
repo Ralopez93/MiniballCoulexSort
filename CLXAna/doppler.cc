@@ -253,18 +253,18 @@ bool doppler::stoppingpowers(string opt) {
   return true;
 }
 
-int doppler::Cut(float PEn, float nf, int quad, int sector) {
-
-  /// Check if entry passes any particle gates
-  /// Function returns 1 for projectile or 0 for target
-  /// -1 is returned if particle is outside of gates.
-  /// Graphical cuts are used if they are given in the config file
-  /// or on the command line with the -cut option.
-  /// If not, there are some default polynomials defined here that
-  /// you are welcome to change, but not encouraged to do so.
+/**
+ * @brief Check if entry passes any particle gates. Graphical cuts are used
+ * if they are given in the confif file or on the command line with the -cut option.
+ * 
+ * @param PEn 
+ * @param nf 
+ * @param sector 
+ * @return 1 for projectile, 0 for target, -1 if outside gates.
+ */
+int doppler::Cut(float PEn, float nf, int sector) {
 
   int identity = -1;
-  int str = quad * 16 + nf;
   float ang = GetPTh(nf, sector) * TMath::RadToDeg();
 
   // Graphical cuts given at command line
@@ -276,104 +276,34 @@ int doppler::Cut(float PEn, float nf, int quad, int sector) {
     else if (Tcut->IsInside(ang, PEn / 1000.))
       identity = 0;
 
-  }
-
-  // inverse kinematics, include overlap region
-  else if (Ab > At) {
-
-    double a = 349.07, b = -4.997, c = -0.0145;
-
-    if (PEn / 1000. <= (a + b * ang + c * ang * ang) && nf < 15)
-
-      identity = 1; // beam
-
-    else if (nf < 15)
-
-      identity = 0; // target
-
-  }
-
-  // normal kinematics without Beam/Target separation
-  else if (0 == 1)
-    identity = 1; // no gate
-
-  // normal kinematics with Beam/Target separation (change the else above to be
-  // false)
-  else {
-
-    double a = 497.602, b = -4.67677, c = -0.0274333, l = 0;
-    double d = 435.186, e = -7.84811, f = 0.0199164, k = 0;
-    double g = 0, h = 0, i = 0, n = 0;
-
-    if (PEn / 1000. <= (a + b * ang + c * ang * ang + l * ang * ang * ang) &&
-        PEn / 1000. >= (d + e * ang + f * ang * ang + k * ang * ang * ang))
-
-      identity = 1; // beam
-
-    else if (PEn / 1000. <=
-                 (d + e * ang + f * ang * ang + k * ang * ang * ang) &&
-             PEn / 1000. >= (g + h * ang + i * ang * ang + n * ang * ang * ang))
-
-      identity = 0; // target
-  }
+  } else
+    throw std::runtime_error("Graphical cuts are not available!");
 
   return identity;
 }
 
-int doppler::Cut_2p(float PEn1, float nf1, int quad1, int sector1, float PEn2,
-                    float nf2, int quad2, int sector2) {
+/**
+ * @brief Check if entry passes the 2 particle condition. It calls Cut() twice
+ * with each of the two particles passed to this function. If one of them is a
+ * particle and one of them is a target, you get a good return.
+ * 
+ * @param PEn1 Energy for particle 1.
+ * @param nf1 Annular (front) strip ID for particle 1.
+ * @param sector1 Sector for particle 1.
+ * @param PEn2 Energy for particle 2.
+ * @param nf2 Annular (front) strip ID for particle 2.
+ * @param sector2 Sector for particle 2.
+ * @return 1 if target is p1, 2 if target is p2, -1 if condition is not fulfilled 
+ */
+int doppler::Cut_2p(float PEn1, float nf1, int sector1,
+                    float PEn2, float nf2, int sector2) {
 
-  /// Check if entry passes the 2 particle condition
-  /// Return value is 1 if target is p1 or 2 if target is p2
-  /// -1 is returned if condition is not filled
-  /// It calls Cut() twice with each of the two particles passed to this
-  /// function. If one of them is a particle and one of them is a target, then
-  /// you get a good return
   int identity = -1;
 
-  // inverse kinematics, include overlap region
-  if (Ab > At) {
-
-    if ((Cut(PEn2, nf2, quad2, sector2) > 0) &&
-        (Cut(PEn1, nf1, quad1, sector1) == 0)) {
-      identity = 0; // target is particle number 1
-    }
-    if ((Cut(PEn1, nf1, quad1, sector1) > 0) &&
-        (Cut(PEn2, nf2, quad2, sector2) == 0)) {
-      identity = 1; // target is particle number 2
-    }
-
-  }
-
-  // normal kinematics without Beam/Target separation
-  // ??? This never occurs, why is it here?
-  else if (0 == 1) {
-
-    if (Cut(PEn2, nf2, quad2, sector2) > 0 &&
-        Cut(PEn1, nf1, quad1, sector1) > 0) {
-
-      if (nf1 < 10 && nf2 < 10) {
-
-        if (PEn1 < PEn2)
-          identity = 0; // target is particle number 1
-        else
-          identity = 1; // target is particle number 2
-      }
-    }
-
-  }
-
-  // normal kinematics with Beam/Target separation (change the 'else if' above
-  // to be false)
-  else {
-
-    if (Cut(PEn1, nf1, quad1, sector1) == 0 &&
-        Cut(PEn2, nf2, quad2, sector2) == 1)
-      identity = 0; // target is particle number 1
-
-    else if (Cut(PEn1, nf1, quad1, sector1) == 1 &&
-             Cut(PEn2, nf2, quad2, sector2) == 0)
-      identity = 1; // target is particle number 2
+  if ((Cut(PEn1, nf1, sector1) == 0) && (Cut(PEn2, nf2, sector2) == 1))
+    identity = 0; // target is particle number 1
+  else if ((Cut(PEn1, nf1, sector1) == 1) && (Cut(PEn2, nf2, sector2) == 0))
+    identity = 1; // target is particle number 2
 
     // JP: test and check later
     // If the angle is small, it's unlikely to be a real 2h event
@@ -381,7 +311,6 @@ int doppler::Cut_2p(float PEn1, float nf1, int quad1, int sector1, float PEn2,
     //   cout<<"in doppler.cc: rings "<<nf1<<" vs "<<nf2<<endl;
     //   identity = -1;
     // }
-  }
 
   return identity;
 }
