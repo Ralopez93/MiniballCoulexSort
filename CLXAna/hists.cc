@@ -112,7 +112,6 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
                      vector<float> GCor_Gtd, vector<int> Laser,
                      vector<float> PEn, vector<int> Pnf, vector<int> Pnb,
                      vector<int> Psec, vector<int> Pquad, vector<float> Ptd) {
-  // GCor_Gtd size is 0 if no additional gammas!
   laser_passed.resize(0);
   PEn_passed.resize(0);
   Pnf_passed.resize(0);
@@ -160,7 +159,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
     pid[0] = Ppid_passed[0];
 
     ng = 1 + GCor_GEn.size();
-    td[0] = Ptd_passed[0]; // in particle
+    td[0] = Ptd_passed[0];
     eg[0] = GEn;
     thg[0] = GTh;
     phg[0] = GPh;
@@ -177,60 +176,52 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       seg[i + 1] = GCor_GSid[i];
     }
 
-    if (pid[0] == 1) { // Target detected, doppler corrections.
+    if (pid[0] == PID_TARG) { // Target detected, doppler corrections.
       // Target angles
 
-      // Use the two-body kinematics
-      if (dc.UseKin()) {
-
+      if (dc.UseKin()) { // Use the two-body kinematics. Not using this right?
         ep[0] = dc.GetTEnKinT(thp[0]);
         thr[0] = dc.GetBThLabT(thp[0]);
         er[0] = dc.GetBEnKinT(thp[0]);
-      }
-
-      // Or use the particle energy and angle
-      else {
+      } else { // Use the particle energy and angle.
         ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
         er[0] = dc.GetBEn(PEn_passed[0], Pnf_passed[0], Psec_passed[0]);
         thr[0] = dc.GetBTh(Pnf_passed[0], Psec_passed[0]);
       }
-      for (int i = 0; i < ng;
-           i++) { // loop through gammas for angles and doppler correction
+
+      for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction.
         atg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
         abg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
         etg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAt());
         ebg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAb());
       }
-
-    } // End of target detected.
-    else { // pid[0]==0, Beam detected
-
-      // Use the two-body kinematics.
-      if (dc.UseKin()) { // Not using this right?
-
+      // End of target detected.
+    } else if (pid[0] == PID_BEAM) {
+      
+      if (dc.UseKin()) { // Use the two-body kinematics. Not using this right?
         ep[0] = dc.GetBEnKinB(thp[0]);
         thr[0] = dc.GetTThLabB(thp[0]);
         er[0] = dc.GetTEnKinB(thp[0]);
-
-      }
-      // Or use the particle energy and angle.
-      else {
+      } else { // Use the particle energy and angle.
         ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
         er[0] = dc.GetTEn(PEn_passed[0], Pnf_passed[0], Psec_passed[0]);
         thr[0] = dc.GetTTh(Pnf_passed[0], PEn_passed[0], Psec_passed[0]);
       }
-      for (int i = 0; i < ng;
-           i++) { // loop through gammas for angles and doppler correction
+
+      for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction 
         abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
         atg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
         ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
         etg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAt());
       }
-    }
+      // End of beam detected.
+    } else
+      throw std::runtime_error("Invalid PID during FillTree");
 
     tree->Fill();
-  // 1-particle case done
-  } else if (np_passed == 2) { // Start of 2-particle case.
+    // 1p case done.
+  } else if (np_passed == 2) {
+    // Start of 2-particle case.
     // check quadrant correlation (diff = 2) and in.
     // Start checking if "good" 2p candidate.
     // Here [0] signifies the beam-like particle, [1] target-like particle.
@@ -243,7 +234,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
     int cut2 = dc.Cut_2p(PEn_passed[0], Pnf_passed[0], Psec_passed[0],
                          PEn_passed[1], Pnf_passed[1], Psec_passed[1]);  
 
-    if (quad_diff == 2 && time_diff <= ppwin && cut2 >= 0) { // we have good 2p candidate
+    if ((quad_diff == 2) && (time_diff <= ppwin) && (cut2 >= 0)) { // we have good 2p candidate
       int ib, it;
 
       if (cut2 == 0) { // target is [0]
@@ -407,7 +398,6 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
 
   // End of 2p events (both 'good' and 'broken').
   } else { // 3-4p events, loop through for 2p correlations and sort uncorrelated events as 1p.
-    std::cout << "dbg: 3-4p events" << std::endl;
     vector<pair<int, int>> v2p;
     vector<int> v2p_cut2;
     vector<int> v1p;

@@ -37,14 +37,13 @@ class hists {
 	// 2hT = both detected - Target part
 	// p=prompt r=random
 
-	public:
+public:
 
   TTree  *tree; // JP: tree output for quick analysis
   // tree branch variables
   int laser; // 0 for laser off, 1 for laser on
   int np;
   double tdpp;
-  //  int b2p; // 0 for unbroken, 1 for broken 2p event
   int pid[2];
   int quad[2];
   int ring[2];
