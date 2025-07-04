@@ -528,7 +528,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       if (v2p_cut2[j] == PID_BEAM) {
         ib = v2p[j].first;
         it = v2p[j].second;
-      } else if (PID_TARG) {
+      } else if (v2p_cut2[j] == PID_TARG) {
         ib = v2p[j].second;
         it = v2p[j].first;
       } else
