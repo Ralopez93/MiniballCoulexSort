@@ -94,7 +94,7 @@ public:
 		vector <int> Laser, vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec,
 		vector <int> Pquad, vector <float> Ptd);
   
-	private:
+private:
   vector<int> laser_passed;
   vector<float> PEn_passed;
   vector<float> Pnf_passed;
@@ -105,5 +105,6 @@ public:
   vector<int> Ppid_passed;
 	//ClassDef(hists,1);
 
+  bool isGood2p(int quad_diff, float time_diff, float ppwin, int cut2);
 };
 #endif

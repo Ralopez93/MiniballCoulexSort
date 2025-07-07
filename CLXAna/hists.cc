@@ -31,7 +31,7 @@ void hists::Initialise(doppler dc_) {
   /// Whatever you do, make sure you declare them in hists.hh file.
   dc = dc_;
 
-  cout << "Initialising tree and histograms...\n";
+  cout << "Initialising tree and histograms..." << endl;
 
   string hname, htitle;
 
@@ -82,6 +82,27 @@ void hists::Set_maxrecoil(int user_maxrecoil) { maxrecoil = user_maxrecoil; }
 void hists::Set_minrecoil(int user_minrecoil) { minrecoil = user_minrecoil; }
 
 /**
+ * @brief Check if pair of particles constitutes a "good" 2p event.
+ * 
+ * @param quad_diff 2p quadrant number difference.
+ * @param time_diff 2p time difference in ns
+ * @param ppwin Particle-particle time window?
+ * @param cut2 Result from cut2().
+ * @param pid_diff 2p pid number difference.
+ * 
+ * @return True if criteria is fulfilled, else false.
+ */
+bool hists::isGood2p(int quad_diff, float time_diff, float ppwin, int cut2) {
+  bool retval =  (
+    (quad_diff == 2) &&
+    (time_diff <= ppwin) &&
+    (cut2 >= 0)
+);
+
+  return retval;
+}
+
+/**
  * @brief Fill the ROOT tree.
  * 
  * @param GEn Gamma energy [keV].
@@ -124,7 +145,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
   for (int i = 0; i < PEn.size(); i++) {
     int pid = dc.Cut(PEn[i], Pnf[i], Psec[i]);
 
-    if (pid >= 0) {
+    if ((pid == PID_BEAM) || (pid == PID_TARG)) {
       laser_passed.push_back(Laser[i]);
       PEn_passed.push_back(PEn[i]);
       Pnf_passed.push_back(Pnf[i]);
@@ -132,14 +153,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       Pquad_passed.push_back(Pquad[i]);
       Psec_passed.push_back(Psec[i]);
       Ptd_passed.push_back(Ptd[i]);
-
-      // JP convention: Target PID == 1, Beam PID == 0.
-      if (pid == PID_BEAM)
-        Ppid_passed.push_back(PID_BEAM);
-      else if (PID_TARG)
-        Ppid_passed.push_back(PID_TARG);
-      else
-        throw std::runtime_error("Invalid PID");
+      Ppid_passed.push_back(pid);
     }
   }
 
@@ -238,7 +252,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
     int cut2 = dc.Cut_2p(PEn_passed[0], Pnf_passed[0], Psec_passed[0],
                          PEn_passed[1], Pnf_passed[1], Psec_passed[1]);  
 
-    if ((quad_diff == 2) && (time_diff <= ppwin) && (cut2 >= 0)) { // we have good 2p candidate
+    if (isGood2p(quad_diff, time_diff, ppwin, cut2)) { 
+      // we have good 2p candidate.
       int ib, it;
 
       if (cut2 == PID_BEAM) {
@@ -280,7 +295,6 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       phr[0] = php[1];
       phr[1] = php[0];
 
-      // Correct PID scheme?
       pid[0] = Ppid_passed[ib];
       pid[1] = Ppid_passed[it];
 
@@ -429,7 +443,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
         int cut2 = dc.Cut_2p(PEn_passed[j], Pnf_passed[j], Psec_passed[j],
                              PEn_passed[k], Pnf_passed[k], Psec_passed[k]); 
 
-        if (quad_diff == 2 && time_diff <= ppwin && cut2 >= 0) { // we have good 2p candidate
+        if (isGood2p(quad_diff, time_diff, ppwin, cut2)) {
           v2p.push_back(make_pair(j, k));
           v2p_cut2.push_back(cut2);
           unmatched[j] = false;
@@ -525,6 +539,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
     // fill matched 2p events
     for (int j = 0; j < v2p.size(); j++) {
       int ib, it;
+
       if (v2p_cut2[j] == PID_BEAM) {
         ib = v2p[j].first;
         it = v2p[j].second;
@@ -533,6 +548,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
         it = v2p[j].first;
       } else
         throw std::runtime_error("Invalid PID");
+
       laser = laser_passed[ib]; // take ib as default
       np = 2;
       tdpp = Ptd_passed[it] - Ptd_passed[ib];

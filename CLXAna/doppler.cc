@@ -261,9 +261,10 @@ bool doppler::stoppingpowers(string opt) {
  * @brief Check if entry passes any particle gates. Graphical cuts are used
  * if they are given in the confif file or on the command line with the -cut option.
  * 
- * @param PEn 
- * @param nf 
- * @param sector 
+ * @param PEn Particle energy.
+ * @param nf Annular (front) strip ID for particle.
+ * @param sector Sector for particle.
+ *
  * @return PID of particle, -1 if outside gates.
  */
 int doppler::Cut(float PEn, float nf, int sector) {
@@ -271,12 +272,11 @@ int doppler::Cut(float PEn, float nf, int sector) {
   int identity = PID_UNKNOWN;
   float ang = GetPTh(nf, sector) * TMath::RadToDeg();
 
-  // Graphical cuts given at command line
+  // Graphical cuts given at command line.
   if (Bcut->GetN() > 0 && Tcut->GetN() > 0) {
 
     if (Bcut->IsInside(ang, PEn / 1000.))
       identity = PID_BEAM;
-
     else if (Tcut->IsInside(ang, PEn / 1000.))
       identity = PID_TARG;
 
@@ -297,6 +297,7 @@ int doppler::Cut(float PEn, float nf, int sector) {
  * @param PEn2 Energy for particle 2.
  * @param nf2 Annular (front) strip ID for particle 2.
  * @param sector2 Sector for particle 2.
+ *
  * @return PID of first particle or -1 if conditions are not fulfilled.
  */
 int doppler::Cut_2p(float PEn1, float nf1, int sector1,
@@ -304,10 +305,13 @@ int doppler::Cut_2p(float PEn1, float nf1, int sector1,
 
   int identity = PID_UNKNOWN;
 
-  if ((Cut(PEn1, nf1, sector1) == PID_BEAM) && (Cut(PEn2, nf2, sector2) == PID_TARG))
+  if ((Cut(PEn1, nf1, sector1) == PID_BEAM) &&
+      (Cut(PEn2, nf2, sector2) == PID_TARG)) {
     identity = PID_BEAM;
-  else if ((Cut(PEn1, nf1, sector1) == PID_TARG) && (Cut(PEn2, nf2, sector2) == PID_BEAM))
+  } else if ((Cut(PEn1, nf1, sector1) == PID_TARG) &&
+             (Cut(PEn2, nf2, sector2) == PID_BEAM)) {
     identity = PID_TARG;
+  }
 
     // JP: test and check later
     // If the angle is small, it's unlikely to be a real 2h event
@@ -404,19 +408,13 @@ float doppler::GetPTh(float nf, int sector) {
   /// Returns theta angle from ann strip number in radians
 
   float angle = 0.0;
-  float angle_lower = 0.0;
-  float angle_upper = 0.0;
 
   // Forward CD - Standard CD
   if (sector == 4) {
-    // Originally: angle = TMath::ATan((9.0 + (15.5 - nf) * 2.0) / cddist);
-    // Now spreading out the events over the strip using norm. distribution.
-    // r0 = 9.0 mm 
+    // r0 = 9.0 mm
     // nf is ring number, goes from 0 to 15.
-    // So for example, r1 = r0 + 0.5 * 2 (basically adding half the pitch), with boundaries +- 1 mm
-    angle_lower = TMath::ATan((9.0 + (15.5 - nf) * 2.0 - 1.0) / cddist);
-    angle_upper = TMath::ATan((9.0 + (15.5 - nf) * 2.0 + 1.0) / cddist);
-    angle = gRandom->Uniform(angle_lower, angle_upper);
+    // So for example, r1 = r0 + 0.5 * 2 (basically adding half the pitch).
+    angle = TMath::ATan((9.0 + (15.5 - nf) * 2.0) / cddist);
   }
 
   // Forward CD - CREX
