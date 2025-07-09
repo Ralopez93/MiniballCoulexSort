@@ -272,16 +272,37 @@ int doppler::Cut(float PEn, float nf, int sector) {
   int identity = PID_UNKNOWN;
   float ang = GetPTh(nf, sector) * TMath::RadToDeg();
 
-  // Graphical cuts given at command line.
   if (Bcut->GetN() > 0 && Tcut->GetN() > 0) {
-
+    // Graphical cuts given at command line.
     if (Bcut->IsInside(ang, PEn / 1000.))
       identity = PID_BEAM;
     else if (Tcut->IsInside(ang, PEn / 1000.))
       identity = PID_TARG;
 
-  } else
-    throw std::runtime_error("Graphical cuts are not available!");
+  } else if (Ab > At) {
+    // inverse kinematics, include overlap region
+    double a = 349.07, b = -4.997, c = -0.0145;
+
+    if (PEn / 1000. <= (a + b * ang + c * ang * ang) && nf < 15)
+      identity = PID_BEAM;
+    else if (nf < 15)
+      identity = PID_TARG;
+  } else {
+    // normal kinematics with Beam/Target separation
+    double a = 497.602, b = -4.67677, c = -0.0274333, l = 0;
+    double d = 435.186, e = -7.84811, f = 0.0199164, k = 0;
+    double g = 0, h = 0, i = 0, n = 0;
+
+    if (PEn / 1000. <= (a + b * ang + c * ang * ang + l * ang * ang * ang) &&
+        PEn / 1000. >= (d + e * ang + f * ang * ang + k * ang * ang * ang))
+
+      identity = PID_BEAM;
+
+    else if (PEn / 1000. <= (d + e * ang + f * ang * ang + k * ang * ang * ang) &&
+             PEn / 1000. >= (g + h * ang + i * ang * ang + n * ang * ang * ang))
+
+      identity = PID_TARG;
+  }
 
   return identity;
 }
