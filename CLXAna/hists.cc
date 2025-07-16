@@ -141,9 +141,14 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
   Psec_passed.resize(0);
   Ptd_passed.resize(0);
   Ppid_passed.resize(0);
+  PTheta_passed.resize(0);
 
   for (int i = 0; i < PEn.size(); i++) {
-    int pid = dc.Cut(PEn[i], Pnf[i], Psec[i]);
+    // Saving theta early. Since it is randomly assigned (within some interval),
+    // multiple calls to GetPTh() may prove problematic.
+
+    float PTheta = dc.GetPTh(Pnf[i], Psec[i]);
+    int pid = dc.Cut(PEn[i], Pnf[i], PTheta);
 
     if ((pid == PID_BEAM) || (pid == PID_TARG)) {
       laser_passed.push_back(Laser[i]);
@@ -154,6 +159,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       Psec_passed.push_back(Psec[i]);
       Ptd_passed.push_back(Ptd[i]);
       Ppid_passed.push_back(pid);
+      PTheta_passed.push_back(PTheta);
     }
   }
 
@@ -171,7 +177,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
     quad[0] = Pquad_passed[0];
     ring[0] = Pnf_passed[0];
     sect[0] = Pnb_passed[0];
-    thp[0] = dc.GetPTh(Pnf_passed[0], Psec_passed[0]);
+    thp[0] = PTheta_passed[0];
     php[0] = dc.GetPPhi(Pquad_passed[0], Pnb_passed[0], Psec_passed[0]);
     phr[0] = dc.GetQPhi(Pquad_passed[0], Pnb_passed[0], Psec_passed[0]);
     pid[0] = Ppid_passed[0];
@@ -203,8 +209,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
         er[0] = dc.GetBEnKinT(thp[0]);
       } else { // Use the particle energy and angle.
         ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
-        er[0] = dc.GetBEn(PEn_passed[0], Pnf_passed[0], Psec_passed[0]);
-        thr[0] = dc.GetBTh(Pnf_passed[0], Psec_passed[0]);
+        er[0] = dc.GetBEn(PEn_passed[0], thp[0]);
+        thr[0] = dc.GetBTh(thp[0]);
       }
 
       for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction.
@@ -215,15 +221,14 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       }
       // End of target detected.
     } else if (pid[0] == PID_BEAM) {
-      
       if (dc.UseKin()) { // Use the two-body kinematics. Not using this right?
         ep[0] = dc.GetBEnKinB(thp[0]);
         thr[0] = dc.GetTThLabB(thp[0]);
         er[0] = dc.GetTEnKinB(thp[0]);
       } else { // Use the particle energy and angle.
         ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
-        er[0] = dc.GetTEn(PEn_passed[0], Pnf_passed[0], Psec_passed[0]);
-        thr[0] = dc.GetTTh(Pnf_passed[0], PEn_passed[0], Psec_passed[0]);
+        er[0] = dc.GetTEn(PEn_passed[0], thp[0]);
+        thr[0] = dc.GetTTh(Pnf_passed[0], thp[0]);
       }
 
       for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction 
@@ -249,8 +254,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
 
     // returns 0 for beam/target passed, 1 for target/beam passed, 
     // -1 for small 2p angles (ring > 10 (innermost = 16) for both)?
-    int cut2 = dc.Cut_2p(PEn_passed[0], Pnf_passed[0], Psec_passed[0],
-                         PEn_passed[1], Pnf_passed[1], Psec_passed[1]);  
+    int cut2 = dc.Cut_2p(PEn_passed[0], Pnf_passed[0], PTheta_passed[0],
+                         PEn_passed[1], Pnf_passed[1], PTheta_passed[1]);  
 
     if (isGood2p(quad_diff, time_diff, ppwin, cut2)) { 
       // we have good 2p candidate.
@@ -268,8 +273,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       laser = laser_passed[ib];
       np = 2;
       tdpp = Ptd_passed[it] - Ptd_passed[ib];
-      int Bnf = Pnf_passed[ib];
-      int Tnf = Pnf_passed[it];
+
       // ordering: 0 for beam, 1 for target (as for 110Sn)
       quad[1] = Pquad_passed[it];
       ring[1] = Pnf_passed[it];
@@ -285,8 +289,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       er[0] = ep[1];
       er[1] = ep[0];
 
-      thp[0] = dc.GetPTh(Bnf, Psec_passed[ib]);
-      thp[1] = dc.GetPTh(Tnf, Psec_passed[it]);
+      thp[0] = PTheta_passed[ib];
+      thp[1] = PTheta_passed[it];
       thr[0] = thp[1];
       thr[1] = thp[0];
 
@@ -338,7 +342,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
         quad[0] = Pquad_passed[j];
         ring[0] = Pnf_passed[j];
         sect[0] = Pnb_passed[j];
-        thp[0] = dc.GetPTh(Pnf_passed[j], Psec_passed[j]);
+        thp[0] = PTheta_passed[j];
         php[0] = dc.GetPPhi(Pquad_passed[j], Pnb_passed[j], Psec_passed[j]);
         phr[0] = dc.GetQPhi(Pquad_passed[j], Pnb_passed[j], Psec_passed[j]);
         pid[0] = Ppid_passed[j];
@@ -375,8 +379,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
           // Or use the particle energy and angle
           else {
             ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
-            er[0] = dc.GetBEn(PEn_passed[j], Pnf_passed[j], Psec_passed[j]);
-            thr[0] = dc.GetBTh(Pnf_passed[j], Psec_passed[j]);
+            er[0] = dc.GetBEn(PEn_passed[j], PTheta_passed[j]);
+            thr[0] = dc.GetBTh(PTheta_passed[j]);
           }
           for (int i = 0; i < ng;
                i++) { // loop through gammas for angles and doppler correction
@@ -399,8 +403,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
           //   // Or use the particle energy and angle
           else {
             ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
-            er[0] = dc.GetTEn(PEn_passed[j], Pnf_passed[j], Psec_passed[j]);
-            thr[0] = dc.GetTTh(Pnf_passed[j], PEn_passed[j], Psec_passed[j]);
+            er[0] = dc.GetTEn(PEn_passed[j], PTheta_passed[j]);
+            thr[0] = dc.GetTTh(PEn_passed[j], PTheta_passed[j]);
           }
           for (int i = 0; i < ng;
                i++) { // loop through gammas for angles and doppler correction
@@ -467,7 +471,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       quad[0] = Pquad_passed[v1p[j]];
       ring[0] = Pnf_passed[v1p[j]];
       sect[0] = Pnb_passed[v1p[j]];
-      thp[0] = dc.GetPTh(Pnf_passed[v1p[j]], Psec_passed[v1p[j]]);
+      thp[0] = PTheta_passed[Pnf_passed[v1p[j]]];
       php[0] = dc.GetPPhi(Pquad_passed[v1p[j]], Pnb_passed[v1p[j]], Psec_passed[v1p[j]]);
       phr[0] = dc.GetQPhi(Pquad_passed[v1p[j]], Pnb_passed[v1p[j]], Psec_passed[v1p[j]]);
       pid[0] = Ppid_passed[v1p[j]];
@@ -500,8 +504,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
           er[0] = dc.GetBEnKinT(thp[0]);
         } else { // Or use the particle energy and angle
           ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
-          er[0] = dc.GetBEn(PEn_passed[v1p[j]], Pnf_passed[v1p[j]], Psec_passed[v1p[j]]);
-          thr[0] = dc.GetBTh(Pnf_passed[v1p[j]], Psec_passed[v1p[j]]);
+          er[0] = dc.GetBEn(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
+          thr[0] = dc.GetBTh(PTheta_passed[Pnf_passed[v1p[j]]]);
         }
 
         for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction
@@ -519,8 +523,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
           er[0] = dc.GetTEnKinB(thp[0]);
         } else {// Or use the particle energy and angle
           ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
-          er[0] = dc.GetTEn(PEn_passed[v1p[j]], Pnf_passed[v1p[j]], Psec_passed[v1p[j]]);
-          thr[0] = dc.GetTTh(Pnf_passed[v1p[j]], PEn_passed[v1p[j]], Psec_passed[v1p[j]]);
+          er[0] = dc.GetTEn(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
+          thr[0] = dc.GetTTh(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
         }
 
         for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction
@@ -552,8 +556,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       laser = laser_passed[ib]; // take ib as default
       np = 2;
       tdpp = Ptd_passed[it] - Ptd_passed[ib];
-      int Bnf = Pnf_passed[ib];
-      int Tnf = Pnf_passed[it];
+
       // ordering: 0 for beam, 1 for target (as for 110Sn)
       quad[1] = Pquad_passed[it];
       ring[1] = Pnf_passed[it];
@@ -568,8 +571,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       ep[1] += dc.GetELoss(ep[it], dc.GetCDDeadLayer(), 1, "TS");
       er[0] = ep[1];
       er[1] = ep[0];
-      thp[0] = dc.GetPTh(Bnf, Psec_passed[ib]);
-      thp[1] = dc.GetPTh(Tnf, Psec_passed[it]);
+      thp[0] = PTheta_passed[ib];
+      thp[1] = PTheta_passed[it];
       thr[0] = thp[1];
       thr[1] = thp[0];
       php[0] = dc.GetPPhi(Pquad_passed[ib], Pnb_passed[ib], Psec_passed[ib]);

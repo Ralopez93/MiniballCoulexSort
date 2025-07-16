@@ -103,6 +103,7 @@ private:
   vector<float> Psec_passed;
   vector<float> Ptd_passed;
   vector<int> Ppid_passed;
+  vector<float> PTheta_passed;
 	//ClassDef(hists,1);
 
   bool isGood2p(int quad_diff, float time_diff, float ppwin, int cut2);

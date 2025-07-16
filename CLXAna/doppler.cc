@@ -263,14 +263,14 @@ bool doppler::stoppingpowers(string opt) {
  * 
  * @param PEn Particle energy.
  * @param nf Annular (front) strip ID for particle.
- * @param sector Sector for particle.
+ * @param PTheta Particle scattering angle.
  *
  * @return PID of particle, -1 if outside gates.
  */
-int doppler::Cut(float PEn, float nf, int sector) {
+int doppler::Cut(float PEn, float ring, float PTheta) {
 
   int identity = PID_UNKNOWN;
-  float ang = GetPTh(nf, sector) * TMath::RadToDeg();
+  float ang = PTheta * TMath::RadToDeg();
 
   if (Bcut->GetN() > 0 && Tcut->GetN() > 0) {
     // Graphical cuts given at command line.
@@ -283,9 +283,9 @@ int doppler::Cut(float PEn, float nf, int sector) {
     // inverse kinematics, include overlap region
     double a = 349.07, b = -4.997, c = -0.0145;
 
-    if (PEn / 1000. <= (a + b * ang + c * ang * ang) && nf < 15)
+    if (PEn / 1000. <= (a + b * ang + c * ang * ang) && ring < 15)
       identity = PID_BEAM;
-    else if (nf < 15)
+    else if (ring < 15)
       identity = PID_TARG;
   } else {
     // normal kinematics with Beam/Target separation
@@ -313,24 +313,24 @@ int doppler::Cut(float PEn, float nf, int sector) {
  * particle and one of them is a target, you get a good return.
  * 
  * @param PEn1 Energy for particle 1.
- * @param nf1 Annular (front) strip ID for particle 1.
- * @param sector1 Sector for particle 1.
+ * @param ring1 Annular (front) strip ID for particle 1.
+ * @param PTheta1 Scattering angle for particle 1.
  * @param PEn2 Energy for particle 2.
- * @param nf2 Annular (front) strip ID for particle 2.
- * @param sector2 Sector for particle 2.
+ * @param ring2 Annular (front) strip ID for particle 2.
+ * @param PTheta2 Scattering angle for particle 2.
  *
  * @return PID of first particle or -1 if conditions are not fulfilled.
  */
-int doppler::Cut_2p(float PEn1, float nf1, int sector1,
-                    float PEn2, float nf2, int sector2) {
+int doppler::Cut_2p(float PEn1, float ring1, float PTheta1,
+                    float PEn2, float ring2, float PTheta2) {
 
   int identity = PID_UNKNOWN;
 
-  if ((Cut(PEn1, nf1, sector1) == PID_BEAM) &&
-      (Cut(PEn2, nf2, sector2) == PID_TARG)) {
+  if ((Cut(PEn1, ring1, PTheta1) == PID_BEAM) &&
+      (Cut(PEn2, ring2, PTheta2) == PID_TARG)) {
     identity = PID_BEAM;
-  } else if ((Cut(PEn1, nf1, sector1) == PID_TARG) &&
-             (Cut(PEn2, nf2, sector2) == PID_BEAM)) {
+  } else if ((Cut(PEn1, ring1, PTheta1) == PID_TARG) &&
+             (Cut(PEn2, ring2, PTheta2) == PID_BEAM)) {
     identity = PID_TARG;
   }
 
@@ -424,7 +424,16 @@ float doppler::GetAt() {
   return At;
 }
 
-float doppler::GetPTh(float nf, int sector) {
+/**
+ * @brief Get particle scattering angle based on ring number and sector.
+ * Should only be called once per entry, since angle is normalized.
+ * 
+ * @param nf 
+ * @param sector 
+ *
+ * @return The particle scattering angle in radians. 
+ */
+float doppler::GetPTh(float ring, int sector) {
 
   /// Returns theta angle from ann strip number in radians
 
@@ -435,24 +444,26 @@ float doppler::GetPTh(float nf, int sector) {
     // r0 = 9.0 mm
     // nf is ring number, goes from 0 to 15.
     // So for example, r1 = r0 + 0.5 * 2 (basically adding half the pitch).
-    angle = TMath::ATan((9.0 + (15.5 - nf) * 2.0) / cddist);
+    double angle_lower = TMath::ATan((9.0 + (15.5 - ring) * 2.0 - 1.0) / cddist);
+    double angle_upper = TMath::ATan((9.0 + (15.5 - ring) * 2.0 + 1.0) / cddist);
+    angle = gRandom->Uniform(angle_lower, angle_upper);
   }
 
   // Forward CD - CREX
   if (sector == 0)
-    angle = TMath::ATan((9.0 + (nf + 0.5) * 2.0) / cddist);
+    angle = TMath::ATan((9.0 + (ring + 0.5) * 2.0) / cddist);
 
   // Forwards Barrel
   if (sector == 1)
-    angle = 0.5 * TMath::Pi() - TMath::ATan((8.0 + (nf + 0.5) * 3.125) / 29.0);
+    angle = 0.5 * TMath::Pi() - TMath::ATan((8.0 + (ring + 0.5) * 3.125) / 29.0);
 
   // Backwards Barrel
   if (sector == 2)
-    angle = 0.5 * TMath::Pi() + TMath::ATan((8.0 + (nf + 0.5) * 3.125) / 29.0);
+    angle = 0.5 * TMath::Pi() + TMath::ATan((8.0 + (ring + 0.5) * 3.125) / 29.0);
 
   // Backwards CD
   if (sector == 3)
-    angle = TMath::Pi() - TMath::ATan((9.0 + (nf + 0.5) * 2.0) / 64.0);
+    angle = TMath::Pi() - TMath::ATan((9.0 + (ring + 0.5) * 2.0) / 64.0);
 
 
   return angle;
@@ -507,7 +518,16 @@ float doppler::GetQPhi(int quad, int seg, int sector) {
   return GetPPhi(quad, seg, sector) + TMath::Pi();
 }
 
-float doppler::GetTTh(float Bnf, float BEn, int sector) {
+/**
+ * @brief Get target scattering angle from beam energy and 
+ * beam scattering angle
+ * 
+ * @param BEn 
+ * @param BTheta 
+ * 
+ * @return Target scattering angle.
+ */
+float doppler::GetTTh(float BEn, float BTheta) {
 
   /// Returns theta angle of T using angle and energy of B
 
@@ -515,19 +535,16 @@ float doppler::GetTTh(float Bnf, float BEn, int sector) {
   float Eprime = Eb * Ab - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Eb * Ab / Eprime);
   float x, y, TTh;
-  if (tau >
-      1) { // inverse kinematics: maximum scattering angle may be exceeded...
+  if (tau > 1) { // inverse kinematics: maximum scattering angle may be exceeded...
     y = TMath::ASin(1. / (tau * epsilon)); // maximum projectile angle in lab
-    if (GetPTh(Bnf, sector) < y)
-      y = GetPTh(Bnf, sector);
+    if (BTheta < y)
+      y = BTheta;
     y = TMath::Tan(y);
   } else {
-    y = TMath::Tan(GetPTh(Bnf, sector)); // y = tan(Theta_projlab)
+    y = TMath::Tan(BTheta); // y = tan(Theta_projlab)
   }
   if (tau > 1 && rand.Gaus(BEn, 30000.) < 50000.) {
-    x = (y * y * epsilon * tau +
-         TMath::Sqrt(-y * y * epsilon * epsilon * tau * tau + y * y + 1)) /
-        (1 + y * y);
+    x = (y * y * epsilon * tau + TMath::Sqrt(-y * y * epsilon * epsilon * tau * tau + y * y + 1)) / (1 + y * y);
   } else {
     x = (y * y * epsilon * tau -
          TMath::Sqrt(-y * y * epsilon * epsilon * tau * tau + y * y + 1)) /
@@ -542,42 +559,54 @@ float doppler::GetTTh(float Bnf, float BEn, int sector) {
   return TTh;
 }
 
-float doppler::GetBTh(float Tnf, int sector) {
-
-  /// Returns theta angle of B using angle and energy of T
+/**
+ * @brief Get beam scattering angle from target angle.
+ * 
+ * @param TTheta Target scattering angle.
+ * 
+ * @return Beam scattering angle.
+ */
+float doppler::GetBTh(float TTheta) {
 
   float tau = Ab / At;
   float Eprime = Eb * Ab - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Eb * Ab / Eprime);
   float x, y, BTh;
-  y = TMath::Tan(GetPTh(Tnf, sector)); // y = tan(Theta_targetlab)
-  x = (y * y * epsilon - TMath::Sqrt(-y * y * epsilon * epsilon + y * y + 1)) /
-      (1 + y * y);
+  y = TMath::Tan(TTheta);
+  x = (y * y * epsilon - TMath::Sqrt(-y * y * epsilon * epsilon + y * y + 1)) / (1 + y * y);
   BTh = TMath::ATan(TMath::Sqrt(1 - x * x) / (tau * epsilon + x));
   if (BTh < 0)
     BTh += TMath::Pi();
   return BTh;
 }
 
-float doppler::GetTEn(float BEn, float Bnf, int sector) {
+/**
+ * @brief Get target energy from beam energy and beam scattering angle.
+ * 
+ * @param BEn Beam energy.
+ * @param BTheta Beam scattering angle. 
+ *
+ * @return Target energy.
+ */
+float doppler::GetTEn(float BEn, float BTheta) {
 
   /// Function to calculate the energy of the recoiling target
   /// given the energy and the angle of the scattered beam
   /// Returns the energy after the target in keV
 
   // Correct for dead layer loss
-  float dist = TMath::Abs(deadlayer / TMath::Cos(GetPTh(Bnf, sector)));
+  float dist = TMath::Abs(deadlayer / TMath::Cos(BTheta));
   float Eproj = BEn + GetELoss(BEn, dist, 1, "BS");
 
   // Trace energy loss back through target to get energy at interaction point
-  dist = TMath::Abs((thick - depth) / TMath::Cos(GetPTh(Bnf, sector)));
+  dist = TMath::Abs((thick - depth) / TMath::Cos(BTheta));
   Eproj += GetELoss(Eproj, dist, 1, "BT");
 
   float Etarg = Ereac - Eproj;
   if (Etarg < 0.1)
     return 0.1; // recoil is stopped in target
 
-  float angle = GetTTh(Bnf, BEn, sector);
+  float angle = GetTTh(BEn, BTheta);
   if (angle < 0.501 * TMath::Pi() && angle > 0.499 * TMath::Pi())
     return 0.1; // stopped
 
@@ -590,25 +619,33 @@ float doppler::GetTEn(float BEn, float Bnf, int sector) {
     return Etarg;
 }
 
-float doppler::GetBEn(float TEn, float Tnf, int sector) {
+/**
+ * @brief Get beam energy from target energy and target scattering angle.
+ * 
+ * @param TEn Target energy.
+ * @param TTheta Target scattering angle.
+ * 
+ * @return Beam energy.
+ */
+float doppler::GetBEn(float TEn, float TTheta) {
 
   /// Function to calculate the energy of the scattered beam
   /// given the energy and the angle of the recoiling target
   /// Returns the energy after the target in keV
 
   // Correct for dead layer loss
-  float dist = TMath::Abs(deadlayer / TMath::Cos(GetPTh(Tnf, sector)));
+  float dist = TMath::Abs(deadlayer / TMath::Cos(TTheta));
   float Etarg = TEn + GetELoss(TEn, dist, 1, "TS");
 
   // Trace energy loss back through target to get energy at interaction point
-  dist = TMath::Abs((thick - depth) / TMath::Cos(GetPTh(Tnf, sector)));
+  dist = TMath::Abs((thick - depth) / TMath::Cos(TTheta));
   Etarg += GetELoss(Etarg, dist, 1, "TT");
 
   float Eproj = Ereac - Etarg;
   if (Eproj < 0.1)
     return 0.1; // projectile is stopped in target
 
-  float angle = GetBTh(Tnf, sector);
+  float angle = GetBTh(TTheta);
   if (angle < 0.501 * TMath::Pi() && angle > 0.499 * TMath::Pi())
     return 0.1; // stopped
 
@@ -832,8 +869,7 @@ float doppler::GetTEnKin(float CoM) {
   float epsilon = TMath::Sqrt(Ereac / Eprime);
 
   float Etarg = (At * Ab) / TMath::Power((At + Ab), 2.0);
-  Etarg *=
-      1. + epsilon * epsilon + 2. * epsilon * TMath::Cos(TMath::Pi() - CoM);
+  Etarg *= 1. + epsilon * epsilon + 2. * epsilon * TMath::Cos(TMath::Pi() - CoM);
   Etarg *= Eprime;
 
   return Etarg;

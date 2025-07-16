@@ -49,9 +49,9 @@ public:
 		 float depth_, float cddist_, float cdoffset_, float deadlayer_,
 		 float contaminant_, float spededist_, TCutG *Bcut_, TCutG *Tcut_,
 		 string srimfile_, bool usekin_, string calfile_ );
-  int Cut(float PEn, float anno, int sector );
-  int Cut_2p(float PEn1, float anno1, int sector1,
-			       float PEn2, float anno2, int sector2 );
+  int Cut(float PEn, float ring, float PTheta );
+  int Cut_2p(float PEn1, float ring1, float PTheta1,
+			       float PEn2, float ring2, float PTheta2 );
   bool	CutG_en2hit( float BEn, float TEn );
   int		GetZb();
   int		GetZt();
@@ -60,13 +60,13 @@ public:
   float	GetCDOffset();
   float	GetCDDeadLayer();
   float	GetSpedeDist();
-  float	GetPTh( float nf, int sector );
+  float	GetPTh( float ring, int sector );
   float	GetPPhi( int quad, int seg, int sector );
-  float	GetTTh( float Bnf, float BEn, int sector );
-  float	GetBTh( float Tnf, int sector );
+  float	GetTTh( float BEn, float BTheta );
+  float	GetBTh( float TTheta );
   float	GetQPhi( int quad, int seg, int sector );
-  float	GetTEn( float BEn, float Bnf, int sector );
-  float	GetBEn( float TEn, float Tnf, int sector );
+  float	GetTEn( float BEn, float BTheta );
+  float	GetBEn( float TEn, float TTheta );
   float	GetELoss( float Ei, float dist, int opt, string combo );
   float	GetBThLab( float CoM );
   float	GetTThLab( float CoM );

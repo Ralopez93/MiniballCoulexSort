@@ -3,7 +3,6 @@ SUBDIRS = common \
 		  EventTree \
 		  TreeBuilder \
 		  CLXAna \
-		  TREXAna \
 		  rootgui
 
 all: MKDIR_P $(SUBDIRS)
