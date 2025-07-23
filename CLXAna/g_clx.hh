@@ -53,6 +53,7 @@ class g_clx : public TObject {
 	UInt_t          fUniqueID;
 	UInt_t          fBits;
 	float           gen;		///< gamma-ray energy in keV
+	int             cur_run_nbr;		///< The current run number to tag data with.
 	int             cid;		///< core ID from 0 to 23
 	int             sid;		///< segment ID from 0 to 6 (zero is the core)
 	int             cluid;		///< cluster ID from 0 to 7

@@ -37,10 +37,11 @@ void hists::Initialise(doppler dc_) {
 
   // particle branches
   tree = new TTree("doppler", "doppler");
+  tree->Branch("run", &run_nbr, "run/I"); // The current run number or 0 if not provided by user.
   tree->Branch("laser", &laser, "laser/I");
   tree->Branch("np", &np, "np/I");          //
   tree->Branch("tdpp", &tdpp, "tdpp/D");    // time difference for 2p events; 0 for 1p event
-  tree->Branch("time", time, "time[np]/D");       // Particle timestamp.
+  tree->Branch("time", time, "time[np]/D"); // Particle timestamp.
   tree->Branch("pid", pid, "pid[np]/I");    // particle ID: 0: target-like, 1: beam-like as defined by cuts
   tree->Branch("quad", quad, "quad[np]/I"); // quadrant ID
   tree->Branch("ring", ring, "ring[np]/I"); // ring ID
@@ -86,10 +87,9 @@ void hists::Set_minrecoil(int user_minrecoil) { minrecoil = user_minrecoil; }
  * @brief Check if pair of particles constitutes a "good" 2p event.
  * 
  * @param quad_diff 2p quadrant number difference.
- * @param time_diff 2p time difference in ns
+ * @param time_diff 2p time difference in ticks of 25 ns.
  * @param ppwin Particle-particle time window?
  * @param cut2 Result from cut2().
- * @param pid_diff 2p pid number difference.
  * 
  * @return True if criteria is fulfilled, else false.
  */
@@ -118,7 +118,7 @@ bool hists::isGood2p(int quad_diff, float time_diff, float ppwin, int cut2) {
  * @param GCor_GCluID Vector of correlated cluster IDs {[0-7]}.
  * @param GCor_GCid Vector of correlated core IDs {[0-23]}.
  * @param GCor_GSid Vector of correlated segment IDs {[0-6]}.
- * @param GCor_Gtd Vector of time-difference to original gamma-ray {[25ns]}
+ * @param GCor_Gtd Vector of time-difference to original gamma-ray {[25 ns]}
  * @param Laser Laser flag (on = 1, off = 0).
  * @param PEn Particle energies [keV].
  * @param Pnf Annular (front) strip ID of particle (0 = outer; 15 inner). A.K.A front CD Ring ID.
@@ -126,7 +126,8 @@ bool hists::isGood2p(int quad_diff, float time_diff, float ppwin, int cut2) {
  * @param Psec Sector of C-REX (0 = FCD; 1 = FBarrel; 2 = BBarrel; 3 = BCD).
  * @param Pquad Detector (quadrant) number of particle
  * @param Ptd Particle-gamma time difference in 25 ns timestamps.
- * @param time Particle timestamp.
+ * @param time Particle timestamp in 25 ns timestamps.
+ * @param cur_run_nbr The current run number or 0 if not provided by user.
  */
 void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
                      int GSid, vector<float> GCor_GEn, vector<float> GCor_GTh,
@@ -134,7 +135,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
                      vector<int> GCor_GCid, vector<int> GCor_GSid,
                      vector<float> GCor_Gtd, vector<int> Laser,
                      vector<float> PEn, vector<int> Pnf, vector<int> Pnb,
-                     vector<int> Psec, vector<int> Pquad, vector<float> Ptd, vector<double> Ptimes) {
+                     vector<int> Psec, vector<int> Pquad, vector<float> Ptd,
+                     vector<double> Ptimes, int cur_run_nbr) {
   laser_passed.resize(0);
   PEn_passed.resize(0);
   Pnf_passed.resize(0);
@@ -171,6 +173,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
   if (np_passed == 0)
     return;
   // passed vector is ordered in quadrants from 0 to 3
+
+  run_nbr = cur_run_nbr;
 
   if (np_passed == 1) { // 1-particle case, PID identified.
     // Here [0] signifies the detected particle. Can be beam or target.
@@ -249,12 +253,9 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
     tree->Fill();
     // 1p case done.
   } else if (np_passed == 2) {
-    // Start of 2-particle case.
-    // check quadrant correlation (diff = 2) and in.
-    // Start checking if "good" 2p candidate.
+    // Start of 2-particle case. Check quadrant correlation (diff = 2) and in. Start checking if "good" 2p candidate.
     // Here [0] signifies the beam-like particle, [1] target-like particle.
-    // time (ppwin, in ns) ; separate if 1n
-    float time_diff = TMath::Abs(Ptd_passed[0] - Ptd_passed[1]); // 2p time difference in ns
+    float time_diff = TMath::Abs(Ptd_passed[0] - Ptd_passed[1]); // 2p time difference in ticks of 25 ns
     int quad_diff = TMath::Abs(Pquad_passed[0] - Pquad_passed[1]); // quadrant number difference
 
     // returns 0 for beam/target passed, 1 for target/beam passed, 
@@ -448,7 +449,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       for (int k = j + 1; k < np_passed; k++) {
         if (j == k)
           continue;
-        float time_diff = TMath::Abs(Ptd_passed[j] - Ptd_passed[k]); // 2p time difference in ns
+        float time_diff = TMath::Abs(Ptd_passed[j] - Ptd_passed[k]); // 2p time difference in ticks of 25 ns
         int quad_diff = TMath::Abs(Pquad_passed[j] - Pquad_passed[k]); // quadrant number difference
 
         // returns 0 for target-beam passed, 1 for beam/target passed, -1 for small 2p angles

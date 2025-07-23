@@ -76,21 +76,9 @@ int main(int argc, char *argv[]) {
   interface->Add("-usekin", "Use two-body kinematics for particle velocity?", &usekin);
   interface->Add("-cal", "Calibration file", &calfilename);
   interface->Add("-clutune", "Cluster switch for angletuning", &clu_tune);
-  interface->Add("-print_angles", "Print CD angles only", &print_angles);
+  interface->Add("-cur_run_nbr", "Tag data with the given run number", &cur_run_nbr);
 
   interface->CheckFlags(argc, argv);
-
-  if (print_angles) {
-    if (cddist <= 0) {
-      cout << "Tried printing angles, but invalid CD dist value: " << cddist << endl;
-      return EXIT_FAILURE;
-    }
-
-    PrintAngles();
-
-    cout << "Finished printing angles." << endl;
-    return EXIT_SUCCESS;
-  }
 
   // Test if output file is there
   if (outputfilename.size() <= 0) {
@@ -218,6 +206,7 @@ int main(int argc, char *argv[]) {
     x.usekin = usekin;
     x.calfile = calfilename;
     x.clu_tune = clu_tune;
+    x.cur_run_nbr = cur_run_nbr;
     cout << "Input parameters:" << endl;
     PrintInput();
   } else {

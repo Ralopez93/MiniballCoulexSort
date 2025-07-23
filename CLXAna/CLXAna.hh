@@ -39,6 +39,6 @@ float		bg_frac = -1.0;		    ///< ratio of prompt and random background subtracti
 string  srim = "./srim";	    ///< directory containing the SRIM output files for Doppler correction
 bool		usekin = false;		    ///< Flag to use two-body kinematics for particle velocity
 int     clu_tune = -1;        ///< Flag to choose cluster for angle tuning
-bool    print_angles = false; ///< Flag to print CD angles. 
+int     cur_run_nbr = 0;      ///< Tag data with current run number. 
 
 void PrintInput();

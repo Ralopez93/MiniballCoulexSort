@@ -43,8 +43,9 @@ public:
   // tree branch variables
   int laser; // 0 for laser off, 1 for laser on
   int np;
-  double tdpp;
-  double time[2];
+  int run_nbr;    // For a lack of better solutions, going to tag each entry with the run number. Woo.
+  double tdpp;    // Particle-Particle time difference in 25 ns timestamps.
+  double time[2]; // Particle timestamp in 25 ns timestamps.
   int pid[2];
   int quad[2];
   int ring[2];
@@ -57,7 +58,7 @@ public:
   double phr[2];
 	
   int ng;
-  double td[24];
+  double td[24];  // Particle-gamma time difference in 25 ns timestamps
   double eg[24]; // calibrated, not dc'ed gamma energy in keV
   double ebg[24]; // calibrated and dc-ed gamma energy to beam kinematics in keV
   double etg[24]; // calibrated and dc-ed gamma energy to target kinematics in keV
@@ -93,7 +94,7 @@ public:
 		vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <int> GCor_GCid, vector <int> GCor_GSid,
 		vector <float> GCor_Gtd,
 		vector <int> Laser, vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec,
-		vector <int> Pquad, vector <float> Ptd, vector<double> Ptimes);
+		vector <int> Pquad, vector <float> Ptd, vector<double> Ptimes, int cur_run_nbr);
   
 private:
   vector<int> laser_passed;
