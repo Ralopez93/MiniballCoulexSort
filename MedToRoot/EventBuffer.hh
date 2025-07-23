@@ -1,77 +1,66 @@
 #ifndef EVENT_BUFFER_HH
 #define EVENT_BUFFER_HH
 
-#include <iostream>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
 
+#include "BuiltEvent.hh"
+#include "GlobalSettings.hh"
+#include "Modules.hh"
 #include "TObject.h"
-
 #include "mbsio.h"
 
-#include "GlobalSettings.hh"
-#include "BuiltEvent.hh"
-#include "Modules.hh"
-
 class EventBuffer : public TObject {
+ public:
+  EventBuffer();
+  EventBuffer(GlobalSettings*);
+  ~EventBuffer();
 
-public:
-	EventBuffer();
-	EventBuffer(GlobalSettings*);
-	~EventBuffer();
+  // reset
+  inline void ClearEvt() {
+    if (Settings == NULL) {
+      cout << "no settings!" << endl;
+      exit(10);
+    }
 
-	// reset
-	inline void ClearEvt() {
+    if (Settings->VerboseLevel() > 3) {
+      cout << __PRETTY_FUNCTION__ << endl;
+    }
 
-		if( Settings == NULL ) {
+    BuiltEvents.clear();
+    Sorted = false;
+  };
 
-			cout << "no settings!" << endl;
-			exit(10);
+  // sort according to time
+  void Sort();
 
-		}
+  // set event number
+  void EventNumber(long long eventNumber);
 
-		if( Settings->VerboseLevel() > 3 ) {
+  // add particles, gammas or timing
+  size_t AddParticle(unsigned short, AdcSubEvent*, long long, bool, bool, bool);
+  size_t AddParticle(unsigned short, AdcSubEvent*, bool, bool, bool);
+  size_t AddGamma(unsigned short, DgfSubEvent*);
 
-			cout<<__PRETTY_FUNCTION__<<endl;
+  void AddTiming(long long, long long, long long);
 
-		}
+  // get number of built events
+  inline size_t NumberOfBuiltEvents() { return BuiltEvents.size(); };
 
-		BuiltEvents.clear();
-		Sorted = false;
+  // get sorted events (only if sorted and then set also the sub event number of
+  // the built event)
+  BuiltEvent* GetSortedEvent(size_t);
 
-	};
+ protected:
+  GlobalSettings* Settings;
 
-	// sort according to time
-	void Sort();
+  bool Sorted;
 
-	// set event number
-	void EventNumber(long long eventNumber);
+  unsigned long long* SubEventNumber;  //! BuiltEvents.size()
+  vector<BuiltEvent> BuiltEvents;
 
-	// add particles, gammas or timing
-	size_t AddParticle(unsigned short, AdcSubEvent*, long long, bool, bool, bool);
-	size_t AddParticle(unsigned short, AdcSubEvent*, bool, bool, bool);
-	size_t AddGamma(unsigned short, DgfSubEvent*);
-
-	void AddTiming(long long, long long, long long);
-  
-	// get number of built events
-	inline size_t NumberOfBuiltEvents() {
-		return BuiltEvents.size();
-	};
-
-	// get sorted events (only if sorted and then set also the sub event number of the built event)
-	BuiltEvent* GetSortedEvent(size_t);
-
-protected:
-	GlobalSettings* Settings;
-
-	bool Sorted;
-
-	unsigned long long* SubEventNumber;//!BuiltEvents.size()
-	vector <BuiltEvent> BuiltEvents;
-
-	ClassDef(EventBuffer, 1)
-
+  ClassDef(EventBuffer, 1)
 };
 
 #endif

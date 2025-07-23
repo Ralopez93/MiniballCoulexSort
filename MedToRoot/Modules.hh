@@ -3,168 +3,108 @@
 
 #include <iostream>
 
+#include "SubEvents.hh"
 #include "TObject.h"
 
-#include "SubEvents.hh"
-
-class DgfModule : public TObject
-{
-public:
-
+class DgfModule : public TObject {
+ public:
   DgfModule();
   ~DgfModule();
 
-  //access functions
-  void AddSubEvent(DgfSubEvent NewSubEvent)
-  {
+  // access functions
+  void AddSubEvent(DgfSubEvent NewSubEvent) {
     fSubEvents.push_back(NewSubEvent);
   };
 
-  void ClearEvt()
-  {
+  void ClearEvt() {
     fType = 999;
     fSubEvents.clear();
   };
 
-  //set functions
-  void SetModuleNumber(unsigned short moduleNumber)
-  {
+  // set functions
+  void SetModuleNumber(unsigned short moduleNumber) {
     fModuleNumber = moduleNumber;
   };
 
-  void SetType(unsigned short type)
-  {
-    fType = type;
-  };
+  void SetType(unsigned short type) { fType = type; };
 
-  //get functions
-  unsigned short GetModuleNumber()
-  {
-    return fModuleNumber;
-  };
+  // get functions
+  unsigned short GetModuleNumber() { return fModuleNumber; };
 
-  unsigned short GetType()
-  {
-    return fType;
-  };
+  unsigned short GetType() { return fType; };
 
-  size_t GetNumberOfSubEvents()
-  {
-    return fSubEvents.size();
-  };
+  size_t GetNumberOfSubEvents() { return fSubEvents.size(); };
 
-  DgfSubEvent* GetSubEvent(size_t Index)
-  {
-    return &(fSubEvents.at(Index));
-  };
+  DgfSubEvent* GetSubEvent(size_t Index) { return &(fSubEvents.at(Index)); };
 
-  //int GetTimestamps(int*);
+  // int GetTimestamps(int*);
 
-protected:
-
+ protected:
   unsigned short fModuleNumber;
   unsigned short fType;
-  vector <DgfSubEvent> fSubEvents;
+  vector<DgfSubEvent> fSubEvents;
 
   ClassDef(DgfModule, 1)
 };
 
-class AdcModule : public TObject
-{
-public:
-  AdcModule();//default ctor
-  ~AdcModule();//dtor
+class AdcModule : public TObject {
+ public:
+  AdcModule();   // default ctor
+  ~AdcModule();  // dtor
 
-  void ClearEvt()
-  {
-    SubEvents.clear();
-  };
+  void ClearEvt() { SubEvents.clear(); };
 
-  //set functions
-  void SetModuleNumber(unsigned short moduleNumber)
-  {
+  // set functions
+  void SetModuleNumber(unsigned short moduleNumber) {
     ModuleNumber = moduleNumber;
   };
 
-  void AddSubEvent(AdcSubEvent NewSubEvent)
-  {
+  void AddSubEvent(AdcSubEvent NewSubEvent) {
     SubEvents.push_back(NewSubEvent);
   };
-  void DeletaLastSubEvent()
-  {
-    SubEvents.pop_back();
-  };
-  
-  //get functions
-  size_t GetNumberOfSubEvents()
-  {
-    return SubEvents.size();
-  }
+  void DeletaLastSubEvent() { SubEvents.pop_back(); };
 
-  unsigned short GetModuleNumber()
-  {
-    return ModuleNumber;
-  };
+  // get functions
+  size_t GetNumberOfSubEvents() { return SubEvents.size(); }
 
-  AdcSubEvent* GetSubEvent(size_t Index)
-  {
-    return &(SubEvents.at(Index));
-  };
+  unsigned short GetModuleNumber() { return ModuleNumber; };
 
-  AdcSubEvent GetLastSubEvent()
-  {
-    return SubEvents.back();
-  };
+  AdcSubEvent* GetSubEvent(size_t Index) { return &(SubEvents.at(Index)); };
 
-protected:
+  AdcSubEvent GetLastSubEvent() { return SubEvents.back(); };
 
+ protected:
   unsigned short ModuleNumber;
-  vector <AdcSubEvent> SubEvents;
+  vector<AdcSubEvent> SubEvents;
 
   ClassDef(AdcModule, 1)
 };
 
-class PatternUnit : public TObject
-{
-public:
+class PatternUnit : public TObject {
+ public:
   PatternUnit(){};
   ~PatternUnit();
 
-  void ClearEvt()
-  {
-    SubEvents.clear();
-  };
+  void ClearEvt() { SubEvents.clear(); };
 
-  //set and access functions
-  void SetModuleNumber(unsigned short moduleNumber)
-  {
+  // set and access functions
+  void SetModuleNumber(unsigned short moduleNumber) {
     ModuleNumber = moduleNumber;
   };
 
-  void AddSubEvent(PatternUnitSubEvent SubEvent)
-  {
+  void AddSubEvent(PatternUnitSubEvent SubEvent) {
     SubEvents.push_back(SubEvent);
   };
 
-  size_t GetNumberOfSubEvents()
-  {
-    return SubEvents.size();
-  }
+  size_t GetNumberOfSubEvents() { return SubEvents.size(); }
 
-  unsigned short GetModuleNumber()
-  {
-    return ModuleNumber;
-  };
+  unsigned short GetModuleNumber() { return ModuleNumber; };
 
-  PatternUnitSubEvent* GetSubEvent(size_t Index)
-  {
+  PatternUnitSubEvent* GetSubEvent(size_t Index) {
     return &SubEvents.at(Index);
   };
 
-  PatternUnitSubEvent GetLastSubEvent()
-  {
-    return SubEvents.back();
-  };
+  PatternUnitSubEvent GetLastSubEvent() { return SubEvents.back(); };
 
   unsigned short GetNumberOfTriggers();
 
@@ -172,140 +112,92 @@ public:
   bool FieldUp();
   bool FieldDown();
 
-protected:
+ protected:
   unsigned short ModuleNumber;
-  vector <PatternUnitSubEvent> SubEvents;
+  vector<PatternUnitSubEvent> SubEvents;
 
   ClassDef(PatternUnit, 1)
 };
 
-class SISScaler : public TObject
-{
-public:
+class SISScaler : public TObject {
+ public:
   SISScaler(){};
   ~SISScaler();
 
-  void ClearEvt()
-  {
-    SubEvents.clear();
-  };
+  void ClearEvt() { SubEvents.clear(); };
 
-  //set and access functions
-  void SetModuleNumber(unsigned short moduleNumber)
-  {
+  // set and access functions
+  void SetModuleNumber(unsigned short moduleNumber) {
     ModuleNumber = moduleNumber;
   };
 
-  void AddSubEvent(ScalerSubEvent SubEvent)
-  {
-    SubEvents.push_back(SubEvent);
-  };
+  void AddSubEvent(ScalerSubEvent SubEvent) { SubEvents.push_back(SubEvent); };
 
-  size_t GetNumberOfSubEvents()
-  {
-    return SubEvents.size();
-  }
+  size_t GetNumberOfSubEvents() { return SubEvents.size(); }
 
-  unsigned short GetModuleNumber()
-  {
-    return ModuleNumber;
-  };
+  unsigned short GetModuleNumber() { return ModuleNumber; };
 
-  ScalerSubEvent* GetSubEvent(size_t Index)
-  {
-    return &SubEvents.at(Index);
-  };
+  ScalerSubEvent* GetSubEvent(size_t Index) { return &SubEvents.at(Index); };
 
-  ScalerSubEvent GetLastSubEvent()
-  {
-    return SubEvents.back();
-  };
+  ScalerSubEvent GetLastSubEvent() { return SubEvents.back(); };
 
-protected:
+ protected:
   unsigned short ModuleNumber;
-  vector <ScalerSubEvent> SubEvents;
+  vector<ScalerSubEvent> SubEvents;
 
   ClassDef(SISScaler, 1)
 };
 
-class DgfScaler : public TObject
-{
-public:
+class DgfScaler : public TObject {
+ public:
   DgfScaler(){};
   ~DgfScaler();
 
-  void ClearEvt()
-  {
-    SubEvents.clear();
-  };
+  void ClearEvt() { SubEvents.clear(); };
 
-  //set and access functions
-  void AddSubEvent(DgfScalerSubEvent& SubEvent)
-  {
-    //cout<<"adding subevent ..."<<flush;
+  // set and access functions
+  void AddSubEvent(DgfScalerSubEvent& SubEvent) {
+    // cout<<"adding subevent ..."<<flush;
     SubEvents.push_back(SubEvent);
-    //cout<<" done"<<endl;
+    // cout<<" done"<<endl;
   };
 
-  size_t GetNumberOfSubEvents()
-  {
-    return SubEvents.size();
-  }
+  size_t GetNumberOfSubEvents() { return SubEvents.size(); }
 
-  DgfScalerSubEvent* GetSubEvent(size_t Index)
-  {
-    return &SubEvents.at(Index);
-  };
+  DgfScalerSubEvent* GetSubEvent(size_t Index) { return &SubEvents.at(Index); };
 
-  DgfScalerSubEvent GetLastSubEvent()
-  {
-    return SubEvents.back();
-  };
+  DgfScalerSubEvent GetLastSubEvent() { return SubEvents.back(); };
 
-protected:
-  vector <DgfScalerSubEvent> SubEvents;
+ protected:
+  vector<DgfScalerSubEvent> SubEvents;
 
   ClassDef(DgfScaler, 1)
 };
 
-
-class BraggChamber : public TObject
-{
-public:
+class BraggChamber : public TObject {
+ public:
   BraggChamber(){};
   ~BraggChamber();
 
-  void ClearEvt()
-  {
-    SubEvents.clear();
-  };
+  void ClearEvt() { SubEvents.clear(); };
 
-  //set and access functions
-  void AddSubEvent(BraggChamberSubEvent SubEvent)
-  {
+  // set and access functions
+  void AddSubEvent(BraggChamberSubEvent SubEvent) {
     SubEvents.push_back(SubEvent);
   };
 
-  size_t GetNumberOfSubEvents()
-  {
-    return SubEvents.size();
-  }
+  size_t GetNumberOfSubEvents() { return SubEvents.size(); }
 
-  BraggChamberSubEvent* GetSubEvent(size_t Index)
-  {
+  BraggChamberSubEvent* GetSubEvent(size_t Index) {
     return &SubEvents.at(Index);
   };
 
-  BraggChamberSubEvent GetLastSubEvent()
-  {
-    return SubEvents.back();
-  };
+  BraggChamberSubEvent GetLastSubEvent() { return SubEvents.back(); };
 
-protected:
-  vector <BraggChamberSubEvent> SubEvents;
+ protected:
+  vector<BraggChamberSubEvent> SubEvents;
 
   ClassDef(BraggChamber, 1)
 };
-
 
 #endif

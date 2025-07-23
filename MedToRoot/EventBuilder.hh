@@ -1,29 +1,27 @@
 #ifndef EVENT_BUILDER_HH
 #define EVENT_BUILDER_HH
 
-#include <iostream>
-#include <iomanip>
-#include <fstream>
 #include <math.h>
 
-#include "TFile.h"
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 
-#include "mbsio.h"
-
-#include "GlobalSettings.hh"
-#include "UnpackedEvent.hh"
 #include "BuiltEvent.hh"
 #include "EventBuffer.hh"
+#include "GlobalSettings.hh"
+#include "TFile.h"
+#include "UnpackedEvent.hh"
+#include "mbsio.h"
 
-class EventBuilder : public TObject
-{
-public:
+class EventBuilder : public TObject {
+ public:
   EventBuilder();
   EventBuilder(GlobalSettings*);
   ~EventBuilder();
 
   int TrashEvent();
-  int ProcessEvent(const MBSDataIO * mbs);
+  int ProcessEvent(const MBSDataIO* mbs);
 
   void BuildEvent();
 
@@ -31,9 +29,9 @@ public:
 
   void Statistics();
 
-private:
+ private:
   GlobalSettings* Settings;
-  
+
   TFile* OnBeamFile;
   TTree* OnBeamTree;
   BuiltEvent* OnBeamEvent;
@@ -56,7 +54,7 @@ private:
 
   EventBuffer* eventBuffer;
 
-  //some variables for statistics
+  // some variables for statistics
   unsigned long long TotalNumberOfBytesCommittedToOnBeamTree;
   unsigned long long TotalNumberOfBytesCommittedToOnBeamBackgroundTree;
   unsigned long long TotalNumberOfBytesCommittedToOffBeamTree;
@@ -67,7 +65,7 @@ private:
   unsigned long long NumberOfBytesWrittenToScalerFile;
   unsigned long long PatternUnitMismatches;
 
-  //Ebis, T1 and SuperCycle pulses
+  // Ebis, T1 and SuperCycle pulses
   unsigned long long TotalNumberOfEbisPulses;
   unsigned long long TotalNumberOfT1Pulses;
   unsigned long long TotalNumberOfSuperCyclePulses;
@@ -78,10 +76,10 @@ private:
 
   unsigned long long SuperCycleTime;
 
-  //laser ON bit
+  // laser ON bit
   bool LaserOn;
-  
-  //Field Up and Down bit
+
+  // Field Up and Down bit
   bool Field;
   bool FieldUp;
   bool FieldDown;
