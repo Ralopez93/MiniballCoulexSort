@@ -6,175 +6,151 @@
 
 #ifndef __CINT__
 
-int main( int argc, char* argv[] ) {
-	
-	// ------------------------------------------------------------------------ //
-	// Read command line
-	// ------------------------------------------------------------------------ //
-	interface->Add("-i", "inputfiles", &InputFiles );
-	interface->Add("-o", "outputfile", &OutputFile );
-	interface->Add("-c", "calibrationfile", &CalibrationFile );
-	interface->Add("-s", "singles", &singles );
-	interface->Add("-gg", "gamma-gamma", &gamgam );
-	interface->Add("-addback", "addback", &addback );
-	interface->Add("-reject", "reject", &reject );
-	interface->Add("-segsum", "sum_segments", &segsum );
-	interface->Add("-crex", "CREX", &crex );
-	interface->Add("-trex", "TREX", &trex );
-	interface->Add("-spede", "SPEDE", &spede );
-	interface->Add("-cdpad", "CD-PAD", &cdpad );
-	interface->Add("-ionch", "IonChamber", &ionch );
-	interface->Add("-vl", "verbose", &verbose );
+int main(int argc, char* argv[]) {
+  // ------------------------------------------------------------------------ //
+  // Read command line
+  // ------------------------------------------------------------------------ //
+  interface->Add("-i", "inputfiles", &InputFiles);
+  interface->Add("-o", "outputfile", &OutputFile);
+  interface->Add("-c", "calibrationfile", &CalibrationFile);
+  interface->Add("-s", "singles", &singles);
+  interface->Add("-gg", "gamma-gamma", &gamgam);
+  interface->Add("-addback", "addback", &addback);
+  interface->Add("-reject", "reject", &reject);
+  interface->Add("-segsum", "sum_segments", &segsum);
+  interface->Add("-crex", "CREX", &crex);
+  interface->Add("-trex", "TREX", &trex);
+  interface->Add("-spede", "SPEDE", &spede);
+  interface->Add("-cdpad", "CD-PAD", &cdpad);
+  interface->Add("-ionch", "IonChamber", &ionch);
+  interface->Add("-vl", "verbose", &verbose);
 
-	interface->CheckFlags(argc, argv);
+  interface->CheckFlags(argc, argv);
 
-	if( InputFiles.size() == 0 || OutputFile.size() == 0 ) {
+  if (InputFiles.size() == 0 || OutputFile.size() == 0) {
+    cerr << "You have to provide at least one input file and the output file!"
+         << endl;
+    exit(1);
+  }
 
-		cerr << "You have to provide at least one input file and the output file!" << endl;
-		exit(1);
+  if (CalibrationFile.size() == 0) {
+    cout << "No Calibration File given, you have to provide one!" << endl;
+    exit(1);
+  }
 
-	}
+  cout << "input file(s):" << endl;
+  for (unsigned int i = 0; i < InputFiles.size(); i++) {
+    cout << InputFiles[i] << endl;
+  }
 
-	if( CalibrationFile.size() == 0 ) {
+  cout << "output file: " << OutputFile << endl;
+  cout << "calibration file: " << CalibrationFile << endl;
 
-		cout << "No Calibration File given, you have to provide one!" << endl;
-		exit(1);
+  if ((trex && cdpad) || (trex && spede) || (cdpad && spede) ||
+      (trex && crex) || (crex && spede) || (cdpad && crex)) {
+    cerr << "Choose only one of cdpad, spede, crex or trex" << endl;
+    exit(1);
+  }
 
-	}
+  if (addback && reject) {
+    cerr << "Choose either addback, reject or neither of them; not both."
+         << endl;
+    exit(1);
+  }
 
-	cout << "input file(s):" << endl;
-	for( unsigned int i = 0; i < InputFiles.size(); i++ ) {
+  // ------------------------------------------------------------------------ //
 
-		cout << InputFiles[i] << endl;
-	
-	}
-	
-	cout << "output file: " << OutputFile << endl;
-	cout << "calibration file: " << CalibrationFile << endl;
+  // ------------------------------------------------------------------------ //
+  // Make calibration
+  // ------------------------------------------------------------------------ //
 
-	if( ( trex && cdpad ) || ( trex && spede ) || ( cdpad && spede ) ||
-	    ( trex && crex ) || ( crex && spede ) || ( cdpad && crex ) ){
-		
-		cerr << "Choose only one of cdpad, spede, crex or trex" << endl;
-		exit(1);
-		
-	}
-	
-	if( addback && reject ){
-		
-		cerr << "Choose either addback, reject or neither of them; not both." << endl;
-		exit(1);
-		
-	}
-	
-	// ------------------------------------------------------------------------ //
+  ifstream testfile(CalibrationFile);
+  if (!testfile.good()) {
+    cout << "Unable to open " << CalibrationFile;
+    cout << " so I am continuing with the default calibration parameters"
+         << endl;
 
+  } else
+    testfile.close();
 
-	// ------------------------------------------------------------------------ //
-	// Make calibration
-	// ------------------------------------------------------------------------ //
+  Calibration* Cal = new Calibration(CalibrationFile);
+  Cal->SetVerbosity(verbose);
+  if (verbose) Cal->PrintCalibration();
 
-	ifstream testfile( CalibrationFile );
-	if( !testfile.good() ) {
-	
-		cout << "Unable to open " << CalibrationFile;
-		cout << " so I am continuing with the default calibration parameters" << endl;
-		
-	}
-	else testfile.close();
-	
-	Calibration *Cal = new Calibration( CalibrationFile );
-	Cal->SetVerbosity( verbose );
-	if( verbose ) Cal->PrintCalibration();
+  // ------------------------------------------------------------------------ //
 
-	// ------------------------------------------------------------------------ //
-	
-	
-	// ------------------------------------------------------------------------ //
-	// Initialise events and setup the input tree
-	// ------------------------------------------------------------------------ //
-	TChain* tr;
-	tr = new TChain( "tr" );
-	for( unsigned int i = 0; i < InputFiles.size(); i++ ) {
-	
-		tr->Add( InputFiles[i] );
-		
-	}
+  // ------------------------------------------------------------------------ //
+  // Initialise events and setup the input tree
+  // ------------------------------------------------------------------------ //
+  TChain* tr;
+  tr = new TChain("tr");
+  for (unsigned int i = 0; i < InputFiles.size(); i++) {
+    tr->Add(InputFiles[i]);
+  }
 
-	if( tr == NULL ) {
+  if (tr == NULL) {
+    cout << "could not find tree tr in file " << endl;
 
-		cout << "could not find tree tr in file " << endl;
+    for (unsigned int i = 0; i < InputFiles.size(); i++) {
+      cout << InputFiles[i] << endl;
+    }
 
-		for( unsigned int i=0; i < InputFiles.size(); i++ ) {
+    return 3;
+  }
 
-			cout << InputFiles[i] << endl;
+  BuiltEvent* event = new BuiltEvent;
+  tr->SetBranchAddress("Event", &event);
 
-		}
-		
-		return 3;
+  // ------------------------------------------------------------------------ //
 
-	}
+  // ------------------------------------------------------------------------ //
+  // Initialise the output tree
+  // ------------------------------------------------------------------------ //
 
-	BuiltEvent* event = new BuiltEvent;
-	tr->SetBranchAddress( "Event", &event );
-	
-	// ------------------------------------------------------------------------ //
-	
-	
-	// ------------------------------------------------------------------------ //
-	// Initialise the output tree
-	// ------------------------------------------------------------------------ //
+  ParticleGammaTree pg_ana(tr, event);
+  pg_ana.SetCalibration(Cal);
+  pg_ana.SetupFlags(singles, gamgam, addback, reject, segsum, crex, trex, cdpad,
+                    ionch, spede, verbose);
 
-	ParticleGammaTree pg_ana( tr, event );
-	pg_ana.SetCalibration( Cal );
-	pg_ana.SetupFlags( singles, gamgam, addback, reject, segsum, crex, trex,
-					  	cdpad, ionch, spede, verbose );
+  // ------------------------------------------------------------------------ //
 
-	// ------------------------------------------------------------------------ //
-	
-	
-	// ------------------------------------------------------------------------ //
-	// Setup Miniball angles
-	// ------------------------------------------------------------------------ //
-	
-	MBGeometry mbg;
-	for( int i = 0; i < 8; i++ ) { // loop over clusters
-		
-		mbg.SetupCluster( Cal->ClusterTheta(i), Cal->ClusterPhi(i),
-						 Cal->ClusterAlpha(i), Cal->ClusterR(i), Cal->ZOffset());
-		
-		for( unsigned int j = 0; j < 3; j++ ) { // loop over cores
-			
-			pg_ana.gamma_theta[i][j][0] = mbg.GetCoreTheta(j) * TMath::DegToRad();
-			pg_ana.gamma_phi[i][j][0] = mbg.GetCorePhi(j) * TMath::DegToRad();
-			
-			for( int k = 0; k < 6; k++ ) { // loop over segments
-				
-				pg_ana.gamma_theta[i][j][k+1] = mbg.GetSegTheta(j,k) * TMath::DegToRad();
-				pg_ana.gamma_phi[i][j][k+1] = mbg.GetSegPhi(j,k) * TMath::DegToRad();
-				
-			}
-			
-		}
-		
-	}
-	
-	// ------------------------------------------------------------------------ //
+  // ------------------------------------------------------------------------ //
+  // Setup Miniball angles
+  // ------------------------------------------------------------------------ //
 
-	
-	// ------------------------------------------------------------------------ //
-	// Call the particle-gamma analysis routine, clean up and finish
-	// ------------------------------------------------------------------------ //
+  MBGeometry mbg;
+  for (int i = 0; i < 8; i++) {  // loop over clusters
 
-	pg_ana.Loop( OutputFile );
-	
-	delete tr;
+    mbg.SetupCluster(Cal->ClusterTheta(i), Cal->ClusterPhi(i),
+                     Cal->ClusterAlpha(i), Cal->ClusterR(i), Cal->ZOffset());
 
-	cout << "Finished." << endl;
-	cout << "\a" << endl;
+    for (unsigned int j = 0; j < 3; j++) {  // loop over cores
 
-	return 0;
-	
+      pg_ana.gamma_theta[i][j][0] = mbg.GetCoreTheta(j) * TMath::DegToRad();
+      pg_ana.gamma_phi[i][j][0] = mbg.GetCorePhi(j) * TMath::DegToRad();
+
+      for (int k = 0; k < 6; k++) {  // loop over segments
+
+        pg_ana.gamma_theta[i][j][k + 1] = mbg.GetSegTheta(j, k) * TMath::DegToRad();
+        pg_ana.gamma_phi[i][j][k + 1] = mbg.GetSegPhi(j, k) * TMath::DegToRad();
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------------ //
+
+  // ------------------------------------------------------------------------ //
+  // Call the particle-gamma analysis routine, clean up and finish
+  // ------------------------------------------------------------------------ //
+
+  pg_ana.Loop(OutputFile);
+
+  delete tr;
+
+  cout << "Finished." << endl;
+  cout << "\a" << endl;
+
+  return 0;
 }
 
 #endif

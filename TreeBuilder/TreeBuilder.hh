@@ -1,26 +1,26 @@
 // TreeBuilder: The main routine that calls GammaTree or TransferTree
 // Liam Gaffney (liam.gaffney@cern.ch) - 31/08/2018
 
-#include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <string>
 
 #ifndef ParticleGammaTree_hh
-# include "ParticleGammaTree.hh"
+#include "ParticleGammaTree.hh"
 #endif
 
-#include "TFile.h"
 #include "TChain.h"
+#include "TFile.h"
 #include "TTree.h"
 using namespace std;
 
 // Command line interface
 #ifndef __COMMAND_LINE_INTERFACE
-# include "CommandLineInterface.hh"
+#include "CommandLineInterface.hh"
 #endif
 
-vector<char*> InputFiles;
+vector<char *> InputFiles;
 string OutputFile;
 string CalibrationFile;
 bool singles = false;

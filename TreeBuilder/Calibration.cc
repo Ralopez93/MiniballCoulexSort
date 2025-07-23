@@ -1,343 +1,308 @@
 #include "Calibration.hh"
+
 #include "TMath.h"
 
 using namespace std;
 using namespace TMath;
 
-Calibration::Calibration( string filename ) {
-
-	SetFile( filename );
-	fVerbose = 0;
-	fNofDgfs = 48;
-	fNofCrys = 24;
-	fNofDgfChans = 4;
-	fNofAdcs = 10; // up to for TREX
-	fNofAdcChans = 32;
-	fNofClusters = 8;
-	fBeamdumpDgf = 53;
-	RawRandomized = 0.;
-	ReadCalibration();
-	fRand = new TRandom();
-		
+Calibration::Calibration(string filename) {
+  SetFile(filename);
+  fVerbose = 0;
+  fNofDgfs = 48;
+  fNofCrys = 24;
+  fNofDgfChans = 4;
+  fNofAdcs = 10;  // up to for TREX
+  fNofAdcChans = 32;
+  fNofClusters = 8;
+  fBeamdumpDgf = 53;
+  RawRandomized = 0.;
+  ReadCalibration();
+  fRand = new TRandom();
 }
 
 Calibration::~Calibration() {
-
-	//cout << "destructor" << endl;
-
+  // cout << "destructor" << endl;
 }
 
 void Calibration::ReadCalibration() {
+  TEnv *config = new TEnv(fInputFile.data());
+  if (fVerbose) cout << "reading dgfs" << endl;
+  fDgfActive.resize(fNofDgfs);
+  fDgfOffset.resize(fNofDgfs);
+  fDgfGain.resize(fNofDgfs);
+  fDgfGainQuadr.resize(fNofDgfs);
+  fCryTime.resize(fNofCrys);
 
-	TEnv *config = new TEnv( fInputFile.data() );
-	if( fVerbose ) cout << "reading dgfs" << endl;
-	fDgfActive.resize( fNofDgfs );
-	fDgfOffset.resize( fNofDgfs );
-	fDgfGain.resize( fNofDgfs );
-	fDgfGainQuadr.resize( fNofDgfs );
-	fCryTime.resize(fNofCrys);
+  for (int dgf = 0; dgf < fNofDgfs; dgf++) {
+    fDgfActive[dgf].resize(fNofDgfChans);
+    fDgfOffset[dgf].resize(fNofDgfChans);
+    fDgfGain[dgf].resize(fNofDgfChans);
+    fDgfGainQuadr[dgf].resize(fNofDgfChans);
 
-	for( int dgf = 0; dgf < fNofDgfs; dgf++ ){
-	  fDgfActive[dgf].resize(fNofDgfChans);
-		fDgfOffset[dgf].resize(fNofDgfChans);
-		fDgfGain[dgf].resize(fNofDgfChans);
-		fDgfGainQuadr[dgf].resize(fNofDgfChans);
+    for (int chan = 0; chan < fNofDgfChans; chan++) {
+      fDgfActive[dgf][chan] =
+          config->GetValue(Form("dgf_%d_%d.Active", dgf, chan), 1);
+      fDgfOffset[dgf][chan] =
+          config->GetValue(Form("dgf_%d_%d.Offset", dgf, chan), 0.);
+      fDgfGain[dgf][chan] =
+          config->GetValue(Form("dgf_%d_%d.Gain", dgf, chan), 1.);
+      fDgfGainQuadr[dgf][chan] = config->GetValue(
+          Form("dgf_%d_%d.GainQuadr", dgf, chan), 0.);  // 1 -> 0
+    }
+  }
+  for (int cry = 0; cry < fNofCrys; cry++) {
+    fCryTime[cry] = config->GetValue(Form("cry_%d.TimeOffset", cry), 0.);
+  }
 
-		for( int chan = 0; chan < fNofDgfChans; chan++ ){
+  if (fVerbose) cout << "reading beamdump" << endl;
+  fBeamdumpOffset.resize(fNofDgfChans);
+  fBeamdumpGain.resize(fNofDgfChans);
+  fBeamdumpGainQuadr.resize(fNofDgfChans);
 
-			fDgfActive[dgf][chan] = config->GetValue(Form("dgf_%d_%d.Active", dgf, chan),1);
-			fDgfOffset[dgf][chan] = config->GetValue(Form("dgf_%d_%d.Offset", dgf, chan),0.);
-			fDgfGain[dgf][chan] = config->GetValue(Form("dgf_%d_%d.Gain", dgf, chan),1.);
-			fDgfGainQuadr[dgf][chan] = config->GetValue(Form("dgf_%d_%d.GainQuadr", dgf, chan),0.);  // 1 -> 0
+  for (int chan = 0; chan < fNofDgfChans; chan++) {
+    fBeamdumpOffset[chan] =
+        config->GetValue(Form("dgf_%d_%d.Offset", fBeamdumpDgf, chan), 0.);
+    fBeamdumpGain[chan] =
+        config->GetValue(Form("dgf_%d_%d.Gain", fBeamdumpDgf, chan), 1.);
+    fBeamdumpGainQuadr[chan] =
+        config->GetValue(Form("dgf_%d_%d.GainQuadr", fBeamdumpDgf, chan), 0.);
+  }
 
-		}
+  if (fVerbose) cout << "reading adcs" << endl;
+  fAdcOffset.resize(fNofAdcs);
+  fAdcGain.resize(fNofAdcs);
+  fAdcThreshold.resize(fNofAdcs);
+  fAdcTime.resize(fNofAdcs);
 
-	}
-	for( int cry = 0; cry < fNofCrys; cry++ ){
-	  fCryTime[cry] = config->GetValue(Form("cry_%d.TimeOffset", cry),0.);
-	}
-	
-	if( fVerbose ) cout << "reading beamdump" << endl;
-	fBeamdumpOffset.resize(fNofDgfChans);
-	fBeamdumpGain.resize(fNofDgfChans);
-	fBeamdumpGainQuadr.resize(fNofDgfChans);
+  for (int adc = 0; adc < fNofAdcs; adc++) {
+    fAdcOffset[adc].resize(fNofAdcChans);
+    fAdcGain[adc].resize(fNofAdcChans);
+    fAdcThreshold[adc].resize(fNofAdcChans);
 
-	for( int chan = 0; chan < fNofDgfChans; chan++ ) {
+    fAdcTime[adc] = config->GetValue(Form("adc_%d.TimeOffset", adc), 0.0);
 
-		fBeamdumpOffset[chan] = config->GetValue(Form("dgf_%d_%d.Offset", fBeamdumpDgf, chan), 0.);
-		fBeamdumpGain[chan] = config->GetValue(Form("dgf_%d_%d.Gain", fBeamdumpDgf, chan), 1.);
-		fBeamdumpGainQuadr[chan] = config->GetValue(Form("dgf_%d_%d.GainQuadr", fBeamdumpDgf, chan), 0.);
+    for (int chan = 0; chan < fNofAdcChans; chan++) {
+      fAdcOffset[adc][chan] =
+          config->GetValue(Form("adc_%d_%d.Offset", adc, chan), 0.);
+      fAdcGain[adc][chan] =
+          config->GetValue(Form("adc_%d_%d.Gain", adc, chan), 1.);
+      fAdcThreshold[adc][chan] =
+          config->GetValue(Form("adc_%d_%d.Threshold", adc, chan), 100.);
+    }
+  }
 
-	}
+  if (fVerbose) cout << "reading Miniball angles" << endl;
+  fClusterTheta.resize(fNofClusters);
+  fClusterPhi.resize(fNofClusters);
+  fClusterAlpha.resize(fNofClusters);
+  fClusterR.resize(fNofClusters);
 
+  for (int clu = 0; clu < fNofClusters; clu++) {
+    fClusterR[clu] = config->GetValue(Form("Cluster_%d.R", clu), 0.);
+    fClusterTheta[clu] = config->GetValue(Form("Cluster_%d.Theta", clu), 0.);
+    fClusterPhi[clu] = config->GetValue(Form("Cluster_%d.Phi", clu), 0.);
+    fClusterAlpha[clu] = config->GetValue(Form("Cluster_%d.Alpha", clu), 0.);
+  }
 
-	if( fVerbose ) cout << "reading adcs" << endl;
-	fAdcOffset.resize(fNofAdcs);
-	fAdcGain.resize(fNofAdcs);
-	fAdcThreshold.resize(fNofAdcs);
-	fAdcTime.resize(fNofAdcs);
+  zoffset = config->GetValue("zoffset", 0.);
 
-	for( int adc = 0; adc < fNofAdcs; adc++ ){
-
-		fAdcOffset[adc].resize(fNofAdcChans);
-		fAdcGain[adc].resize(fNofAdcChans);
-		fAdcThreshold[adc].resize(fNofAdcChans);
-
-		fAdcTime[adc] = config->GetValue( Form("adc_%d.TimeOffset", adc ) , 0.0 );
-
-		for( int chan = 0; chan < fNofAdcChans; chan++ ){
-
-			fAdcOffset[adc][chan] = config->GetValue(Form("adc_%d_%d.Offset", adc, chan),0.);
-			fAdcGain[adc][chan] = config->GetValue(Form("adc_%d_%d.Gain", adc, chan),1.);
-			fAdcThreshold[adc][chan] = config->GetValue(Form("adc_%d_%d.Threshold", adc, chan),100.);
-
-		}
-
-	}
-  
-	if( fVerbose ) cout << "reading Miniball angles" << endl;
-	fClusterTheta.resize(fNofClusters);
-	fClusterPhi.resize(fNofClusters);
-	fClusterAlpha.resize(fNofClusters);
-	fClusterR.resize(fNofClusters);
-
-	for( int clu = 0; clu < fNofClusters; clu++ ) {
-
-		fClusterR[clu] =     config->GetValue( Form("Cluster_%d.R", clu), 0. );
-		fClusterTheta[clu] = config->GetValue( Form("Cluster_%d.Theta", clu), 0. );
-		fClusterPhi[clu] =   config->GetValue( Form("Cluster_%d.Phi", clu), 0. );
-		fClusterAlpha[clu] = config->GetValue( Form("Cluster_%d.Alpha", clu), 0. );
-
-	}
-
-	zoffset = config->GetValue( "zoffset", 0. );
-
-	delete config;
-	
+  delete config;
 }
 
-void Calibration::PrintCalibration(){
+void Calibration::PrintCalibration() {
+  cout << "DGFs" << endl;
+  for (int dgf = 0; dgf < fNofDgfs; dgf++) {
+    for (int chan = 0; chan < fNofDgfChans; chan++) {
+      cout << Form("dgf_%d_%d.Active:   \t", dgf, chan) << fDgfActive[dgf][chan]
+           << endl;
+      cout << Form("dgf_%d_%d.Offset:   \t", dgf, chan) << fDgfOffset[dgf][chan]
+           << endl;
+      cout << Form("dgf_%d_%d.Gain:     \t", dgf, chan) << fDgfGain[dgf][chan]
+           << endl;
+      cout << Form("dgf_%d_%d.GainQuadr:\t", dgf, chan)
+           << fDgfGainQuadr[dgf][chan] << endl;
+    }
+  }
 
-	cout << "DGFs" << endl;
-	for( int dgf = 0; dgf < fNofDgfs; dgf++ ){
-	
-		for( int chan = 0; chan < fNofDgfChans; chan++ ){
-		
-			cout << Form("dgf_%d_%d.Active:   \t", dgf, chan) << fDgfActive[dgf][chan] << endl;
-			cout << Form("dgf_%d_%d.Offset:   \t", dgf, chan) << fDgfOffset[dgf][chan] << endl;
-			cout << Form("dgf_%d_%d.Gain:     \t", dgf, chan) << fDgfGain[dgf][chan] << endl;
-			cout << Form("dgf_%d_%d.GainQuadr:\t", dgf, chan) << fDgfGainQuadr[dgf][chan] << endl;
-      
-		}
-    
-	}
-  
-	cout << "Beamdump" << endl;
-	for( int chan = 0; chan < fNofDgfChans; chan++ ){
+  cout << "Beamdump" << endl;
+  for (int chan = 0; chan < fNofDgfChans; chan++) {
+    cout << Form("dgf_%d_%d.Offset:   \t", fBeamdumpDgf, chan)
+         << fBeamdumpOffset[chan] << endl;
+    cout << Form("dgf_%d_%d.Gain:     \t", fBeamdumpDgf, chan)
+         << fBeamdumpGain[chan] << endl;
+    cout << Form("dgf_%d_%d.GainQuadr:\t", fBeamdumpDgf, chan)
+         << fBeamdumpGainQuadr[chan] << endl;
+  }
 
-		cout << Form("dgf_%d_%d.Offset:   \t", fBeamdumpDgf, chan) << fBeamdumpOffset[chan] << endl;
-		cout << Form("dgf_%d_%d.Gain:     \t", fBeamdumpDgf, chan) << fBeamdumpGain[chan] << endl;
-		cout << Form("dgf_%d_%d.GainQuadr:\t", fBeamdumpDgf, chan) << fBeamdumpGainQuadr[chan] << endl;
+  cout << "ADCs" << endl;
+  for (int adc = 0; adc < fNofAdcs; adc++) {
+    cout << Form("adc_%d.TimeOffset:   \t", adc) << fAdcTime[adc] << endl;
 
-	}
-  
-	cout << "ADCs" << endl;
-	for( int adc = 0; adc < fNofAdcs; adc++ ){
+    for (int chan = 0; chan < fNofAdcChans; chan++) {
+      cout << Form("adc_%d_%d.Offset:   \t", adc, chan) << fAdcOffset[adc][chan]
+           << endl;
+      cout << Form("adc_%d_%d.Gain:     \t", adc, chan) << fAdcGain[adc][chan]
+           << endl;
+      cout << Form("adc_%d_%d.Threshold:\t", adc, chan)
+           << fAdcThreshold[adc][chan] << endl;
+    }
+  }
 
-		cout << Form( "adc_%d.TimeOffset:   \t", adc ) << fAdcTime[adc] << endl;
+  cout << "Miniball angles" << endl;
+  for (int clu = 0; clu < fNofClusters; clu++) {
+    cout << Form("Cluster_%d.R:    \t", clu) << fClusterR[clu] << endl;
+    cout << Form("Cluster_%d.Theta:\t", clu) << fClusterTheta[clu] << endl;
+    cout << Form("Cluster_%d.Phi:  \t", clu) << fClusterPhi[clu] << endl;
+    cout << Form("Cluster_%d.Alpha:\t", clu) << fClusterAlpha[clu] << endl;
+  }
 
-		for( int chan=0; chan < fNofAdcChans; chan++ ){
-
-			cout << Form( "adc_%d_%d.Offset:   \t", adc, chan ) << fAdcOffset[adc][chan] << endl;
-			cout << Form( "adc_%d_%d.Gain:     \t", adc, chan ) << fAdcGain[adc][chan] << endl;
-			cout << Form( "adc_%d_%d.Threshold:\t", adc, chan ) << fAdcThreshold[adc][chan] << endl;
-	
-		}
-
-	}
-
-	cout << "Miniball angles" << endl;
-	for( int clu = 0; clu < fNofClusters; clu++ ) {
-		
-		cout << Form( "Cluster_%d.R:    \t", clu ) << fClusterR[clu] << endl;
-		cout << Form( "Cluster_%d.Theta:\t", clu ) << fClusterTheta[clu] << endl;
-		cout << Form( "Cluster_%d.Phi:  \t", clu ) << fClusterPhi[clu] << endl;
-		cout << Form( "Cluster_%d.Alpha:\t", clu ) << fClusterAlpha[clu] << endl;
-		
-	}
-	
-	cout << "zoffset: " << zoffset << endl;
-
+  cout << "zoffset: " << zoffset << endl;
 }
-vector<int> Calibration::GetDeadSegments(int clu, int core){
+vector<int> Calibration::GetDeadSegments(int clu, int core) {
   vector<int> vdead;
   vdead.clear();
-  int dgf_min = clu*6+core*2;
-  int dgf_max = dgf_min+1;
-  
-  for(int i = dgf_min; i <= dgf_max; i++){
-    for(int j = 0; j < fNofDgfChans; j++){
-      if (!fDgfActive[i][j])
-	vdead.push_back((i%2)*3+j);
+  int dgf_min = clu * 6 + core * 2;
+  int dgf_max = dgf_min + 1;
+
+  for (int i = dgf_min; i <= dgf_max; i++) {
+    for (int j = 0; j < fNofDgfChans; j++) {
+      if (!fDgfActive[i][j]) vdead.push_back((i % 2) * 3 + j);
     }
   }
   return vdead;
-
 }
-double Calibration::DgfEnergy(int dgf, int chan, unsigned short raw){
+double Calibration::DgfEnergy(int dgf, int chan, unsigned short raw) {
+  double energy;
 
-	double energy;
+  if ((dgf > -1) && (dgf < fNofDgfs) && (chan > -1) && (chan < fNofDgfChans)) {
+    cout.precision(7);
+    RawRandomized = raw + 0.5 - fRand->Uniform();
 
-	if( (dgf>-1) && (dgf<fNofDgfs) && (chan>-1) && (chan<fNofDgfChans) ){
+    energy = fDgfActive[dgf][chan] *
+             (fDgfGainQuadr[dgf][chan] * TMath::Power(RawRandomized, 2) +
+              fDgfGain[dgf][chan] * RawRandomized + fDgfOffset[dgf][chan]);
 
-		cout.precision(7);
-		RawRandomized = raw + 0.5 - fRand->Uniform();
-		
-		energy = fDgfActive[dgf][chan]*(fDgfGainQuadr[dgf][chan]*TMath::Power(RawRandomized,2) + fDgfGain[dgf][chan]*RawRandomized + fDgfOffset[dgf][chan]);
-		
-		if(fVerbose > 1 && chan == 0 && dgf % 2 == 0) { // core
-		  if (fDgfActive[dgf][chan])
-		    cout << "Dgf: " << dgf << ". Chan: " << chan << ". Raw: " << raw << ". EnergyCal: " << energy << endl;
-		  else
-		    cout << "Dgf: " << dgf << ". Chan: " << chan << " dead " << endl;
+    if (fVerbose > 1 && chan == 0 && dgf % 2 == 0) {  // core
+      if (fDgfActive[dgf][chan])
+        cout << "Dgf: " << dgf << ". Chan: " << chan << ". Raw: " << raw
+             << ". EnergyCal: " << energy << endl;
+      else
+        cout << "Dgf: " << dgf << ". Chan: " << chan << " dead " << endl;
+    }
 
-		}
-		
-		return energy;
+    return energy;
 
-	}
+  }
 
-	else if( dgf == 53 && chan >= 0 && chan < 4 ) {
-	
-		cout.precision(7);
-		RawRandomized = raw + 0.5 - fRand->Uniform();
+  else if (dgf == 53 && chan >= 0 && chan < 4) {
+    cout.precision(7);
+    RawRandomized = raw + 0.5 - fRand->Uniform();
 
-		energy = fBeamdumpGainQuadr[chan]*TMath::Power(RawRandomized,2);
-		energy += fBeamdumpGain[chan]*RawRandomized;
-		energy += fBeamdumpOffset[chan];
+    energy = fBeamdumpGainQuadr[chan] * TMath::Power(RawRandomized, 2);
+    energy += fBeamdumpGain[chan] * RawRandomized;
+    energy += fBeamdumpOffset[chan];
 
-		return energy; 
+    return energy;
 
-	}
-	
-	else cerr << "dgf " << dgf << " channel " << chan << " not found!" << endl;
+  }
 
-	return -1;
+  else
+    cerr << "dgf " << dgf << " channel " << chan << " not found!" << endl;
 
+  return -1;
 }
 
-double Calibration::AdcEnergy( int adc, int chan, unsigned short raw ) {
-	
-	if( adc >= 0 && adc < fNofAdcs && chan >= 0 && chan < fNofAdcChans ) {
-		
-		return ((fAdcGain[adc][chan]*( raw +0.5 - fRand->Uniform())) + fAdcOffset[adc][chan]);
-		
-	}
-	
-	else cerr << "adc " << adc << " channel " << chan << " not found!" << endl;
-	
-	return -1;
-	
+double Calibration::AdcEnergy(int adc, int chan, unsigned short raw) {
+  if (adc >= 0 && adc < fNofAdcs && chan >= 0 && chan < fNofAdcChans) {
+    return ((fAdcGain[adc][chan] * (raw + 0.5 - fRand->Uniform())) +
+            fAdcOffset[adc][chan]);
+
+  }
+
+  else
+    cerr << "adc " << adc << " channel " << chan << " not found!" << endl;
+
+  return -1;
 }
 
-double Calibration::AdcThreshold( int adc, int chan ) {
-	
-	if( adc >= 0 && adc < fNofAdcs && chan >= 0 && chan < fNofAdcChans ) {
-		
-		return fAdcThreshold[adc][chan];
-		
-	}
-	
-	else cerr << "adc " << adc << " channel " << chan << " not found!" << endl;
-	
-	return -1;
-	
+double Calibration::AdcThreshold(int adc, int chan) {
+  if (adc >= 0 && adc < fNofAdcs && chan >= 0 && chan < fNofAdcChans) {
+    return fAdcThreshold[adc][chan];
+
+  }
+
+  else
+    cerr << "adc " << adc << " channel " << chan << " not found!" << endl;
+
+  return -1;
 }
 
-double Calibration::AdcTime( int adc ){
-	
-	if( adc >= 0 && adc < fNofAdcs ) {
-		
-		return fAdcTime[adc];
-		
-	}
-	
-	else cerr << "adc " << adc << " not found!" << endl;
-	
-	return -1;
-	
+double Calibration::AdcTime(int adc) {
+  if (adc >= 0 && adc < fNofAdcs) {
+    return fAdcTime[adc];
+
+  }
+
+  else
+    cerr << "adc " << adc << " not found!" << endl;
+
+  return -1;
 }
-double Calibration::CryTime( int cry ){
-	
-	if( cry >= 0 && cry < fNofCrys ) {
-		
-		return fCryTime[cry];
-		
-	}
-	
-	//	else cerr << "cry " << cry << " not found!" << endl;
-	
-	return 0;
-	
+double Calibration::CryTime(int cry) {
+  if (cry >= 0 && cry < fNofCrys) {
+    return fCryTime[cry];
+  }
+
+  //	else cerr << "cry " << cry << " not found!" << endl;
+
+  return 0;
 }
-double Calibration::ClusterTheta( int clu ){
-	
-	if( clu >= 0 && clu < fNofClusters ) {
-		
-		return fClusterTheta[clu];
-		
-	}
-	
-	else cerr << "Cluster " << clu << " not found!" << endl;
-	
-	return -1;
-	
+double Calibration::ClusterTheta(int clu) {
+  if (clu >= 0 && clu < fNofClusters) {
+    return fClusterTheta[clu];
+
+  }
+
+  else
+    cerr << "Cluster " << clu << " not found!" << endl;
+
+  return -1;
 }
 
-double Calibration::ClusterPhi( int clu ){
-	
-	if( clu >= 0 && clu < fNofClusters ) {
-		
-		return fClusterPhi[clu];
-		
-	}
-	
-	else cerr << "Cluster " << clu << " not found!" << endl;
-	
-	return -1;
-	
+double Calibration::ClusterPhi(int clu) {
+  if (clu >= 0 && clu < fNofClusters) {
+    return fClusterPhi[clu];
+
+  }
+
+  else
+    cerr << "Cluster " << clu << " not found!" << endl;
+
+  return -1;
 }
 
-double Calibration::ClusterAlpha( int clu ){
-	
-	if( clu >= 0 && clu < fNofClusters ) {
-		
-		return fClusterAlpha[clu];
-		
-	}
-	
-	else cerr << "Cluster " << clu << " not found!" << endl;
-	
-	return -1;
-	
+double Calibration::ClusterAlpha(int clu) {
+  if (clu >= 0 && clu < fNofClusters) {
+    return fClusterAlpha[clu];
+
+  }
+
+  else
+    cerr << "Cluster " << clu << " not found!" << endl;
+
+  return -1;
 }
 
-double Calibration::ClusterR( int clu ){
-	
-	if( clu >= 0 && clu < fNofClusters ) {
-		
-		return fClusterR[clu];
-		
-	}
-	
-	else cerr << "Cluster " << clu << " not found!" << endl;
-	
-	return -1;
-	
+double Calibration::ClusterR(int clu) {
+  if (clu >= 0 && clu < fNofClusters) {
+    return fClusterR[clu];
+
+  }
+
+  else
+    cerr << "Cluster " << clu << " not found!" << endl;
+
+  return -1;
 }
 
-double Calibration::ZOffset(){
-
-	return zoffset;
-	
-}
+double Calibration::ZOffset() { return zoffset; }

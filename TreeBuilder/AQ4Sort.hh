@@ -1,19 +1,17 @@
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <string>
 
-#include "TFile.h"
+#include "BuiltEvent.hh"
+#include "Calibration.hh"
+#include "CommandLineInterface.hh"
 #include "TChain.h"
-#include "TTree.h"
+#include "TFile.h"
 #include "TH1F.h"
 #include "TH2F.h"
 #include "TH2S.h"
 #include "TMath.h"
-
-#include "CommandLineInterface.hh"
-#include "BuiltEvent.hh"
-#include "Calibration.hh"
+#include "TTree.h"
 #include "mbevts.hh"
 
 using namespace std;
-

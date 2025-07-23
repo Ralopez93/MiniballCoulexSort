@@ -3,90 +3,75 @@
 
 #define PBINS 800
 #define PRANGE 800
-#define PMIN -1.0*PRANGE/PBINS
-#define PMAX PRANGE+PMIN
+#define PMIN -1.0 * PRANGE / PBINS
+#define PMAX PRANGE + PMIN
 #define PART_ARRAY 250
 
 #define GBINS 4000
 #define GRANGE 4000
-#define GMIN -1.0*GRANGE/GBINS
-#define GMAX GRANGE+GMIN
+#define GMIN -1.0 * GRANGE / GBINS
+#define GMAX GRANGE + GMIN
 #define GAMMA_ARRAY 250
 
 #define ELBINS 2000
 #define ELRANGE 2000
-#define ELMIN -1.0*ELRANGE/ELBINS
-#define ELMAX ELRANGE+ELMIN
+#define ELMIN -1.0 * ELRANGE / ELBINS
+#define ELMAX ELRANGE + ELMIN
 #define ELECTRON_ARRAY 250
 
 #ifndef ParticleGammaTree_hh
-# include "ParticleGammaTree.hh"
+#include "ParticleGammaTree.hh"
 #endif
 
-
 void ParticleGammaTree::ClearEvt() {
-	
   // Reset trees
   mb_evts.clear();
   tr_evts.clear();
-  vector<mbevts>().swap( mb_evts );
-  vector<trevts>().swap( tr_evts );
-	
+  vector<mbevts>().swap(mb_evts);
+  vector<trevts>().swap(tr_evts);
+
   return;
-	
 }
 
 void ParticleGammaTree::FillCLXTree() {
-	
-  for( unsigned int j = 0; j < mb_evts.size(); j++ ) {
-		
+  for (unsigned int j = 0; j < mb_evts.size(); j++) {
     mb_evts[j].SearchCoin();
     write_mb_evts.Initialise();
-    write_mb_evts.CopyData( mb_evts[j] );
-		
+    write_mb_evts.CopyData(mb_evts[j]);
+
     // Standard particle-gamma coincidences
-    if( write_mb_evts.GetNrPrompt() > 0 ||
-	write_mb_evts.GetNrRandom() > 0 ||
-	write_mb_evts.GetNrDelayed() > 0  ){
-			
+    if (write_mb_evts.GetNrPrompt() > 0 || write_mb_evts.GetNrRandom() > 0 ||
+        write_mb_evts.GetNrDelayed() > 0) {
       g_clx->Fill();
-			
+
     }
-		
+
     // Gamma-gamma coincidences, with or without particles
-    else if( gamgam && write_mb_evts.GetNrGammas() > 1 ) g_clx->Fill();
-		
+    else if (gamgam && write_mb_evts.GetNrGammas() > 1)
+      g_clx->Fill();
+
     // Gamma singles, with or without particles (source data)
-    else if( singles ) g_clx->Fill();
-		
+    else if (singles)
+      g_clx->Fill();
   }
-	
+
   return;
-	
 }
 
 void ParticleGammaTree::FillTREXTree() {
-	
-  for( unsigned int j = 0; j < tr_evts.size(); j++ ) {
-		
+  for (unsigned int j = 0; j < tr_evts.size(); j++) {
     tr_evts[j].SearchCoin();
     write_tr_evts.Initialise();
-    write_tr_evts.CopyData( tr_evts[j] );
-		
-    // Only if we have some gammas, or singles is declared
-    if( write_tr_evts.GetNrPrompt() > 0 ||
-	write_tr_evts.GetNrRandom() > 0 ||
-	write_tr_evts.GetNrDelayed() > 0 ||
-	singles ) {
-			
-      p_tr->Fill();
+    write_tr_evts.CopyData(tr_evts[j]);
 
+    // Only if we have some gammas, or singles is declared
+    if (write_tr_evts.GetNrPrompt() > 0 || write_tr_evts.GetNrRandom() > 0 ||
+        write_tr_evts.GetNrDelayed() > 0 || singles) {
+      p_tr->Fill();
     }
-	
   }
-	
+
   return;
-	
 }
 
 // ------------------------------------------------------------------------ //
@@ -96,377 +81,373 @@ void ParticleGammaTree::CLXCoincidences() {
   //  cout<<"Inside CLXCoinc "<<pf.ReconstructedSize()<<endl;
   // Start with gammas
   //  if (
-      //  cout<<"ab.GetGenSize() vs pf.ReconstructedSize(): "<<ab.GetGenSize()<<" vs "<<pf.ReconstructedSize()<<endl;
+  //  cout<<"ab.GetGenSize() vs pf.ReconstructedSize(): "<<ab.GetGenSize()<<" vs
+  //  "<<pf.ReconstructedSize()<<endl;
 
   // singles
-  if (ab.GetGenSize()>0){
-  for( unsigned int i = 0; i < ab.GetGenSize(); i++ ) { // addback vector size > 0 to fill
-		
-    // Initialise temporary event
-    fill_mb_evts.Initialise();
-    //    cout<<"initialize successful "<<i<<endl;
-    // Fill temporary event
-    fill_mb_evts.SetGen( ab.GetGen(i) );
-    fill_mb_evts.SetCluid( ab.GetClu(i) );
-    fill_mb_evts.SetCid( ab.GetCid(i) );
-    fill_mb_evts.SetSid( ab.GetSid(i) );
-    fill_mb_evts.SetTheta( gamma_theta[ab.GetClu(i)][ab.GetCid(i)%3][ab.GetSid(i)] );
-    fill_mb_evts.SetPhi( gamma_phi[ab.GetClu(i)][ab.GetCid(i)%3][ab.GetSid(i)] );
-		
-    // Do particles
-    //    if (pf.ReconstructedSize() > 0)
-    //    cout<<"pf.ReconstructedSize(): "<<pf.ReconstructedSize()<<endl;
-    for( unsigned int j = 0; j < pf.ReconstructedSize(); j++ ) {
-			
-      tdiffPG = pf.GetTime(j) - ab.GetGtd(i);
+  if (ab.GetGenSize() > 0) {
+    for (unsigned int i = 0; i < ab.GetGenSize();
+         i++) {  // addback vector size > 0 to fill
 
-      // electrons
-      if( ab.GetClu(i) == 8 ) {
-				
-	tdiff_ep->Fill( tdiffPG );
-				
-	if( tMinRandomElectron <= tdiffPG && tdiffPG < tMaxRandomElectron ) coinc_flag = 1;
-	else if( tMinPromptElectron <= tdiffPG && tdiffPG < tMaxPromptElectron ) coinc_flag = 0;
-	else coinc_flag = -1;
-				
-      }
-			
-      // gamma-rays
-      else {
-				
-	tdiff_gp->Fill( tdiffPG );
-	tdiff_gp_q[pf.GetQuad(j)]->Fill( tdiffPG - Cal->AdcTime(pf.GetQuad(j)) );
-				
-	if( tMinDelayed <= tdiffPG && tdiffPG < tMaxDelayed ) coinc_flag = 2;
-	else if( tMinRandom <= tdiffPG && tdiffPG < tMaxRandom ) coinc_flag = 1;
-	else if( tMinPrompt <= tdiffPG && tdiffPG < tMaxPrompt ) coinc_flag = 0;
-	else coinc_flag = -1;
-				
-      }
-			
-      // Add particle
-      fill_mb_evts.SetPart( pf.GetPEn(j), pf.GetNf(j), pf.GetNb(j), pf.GetSector(j), pf.GetTime(j),
-			    (double)event->SuperCycleTime(), (double)event->T1Time(),
-			    (float)tdiffPG, (int)coinc_flag, pf.GetQuad(j), (int)pf.GetLaser(j) );
-			
-    } // End loop All the particles
-		
-  	
-    // Look for correlated gammas or electrons
-    for( unsigned int k = 0; k < ab.GetGenSize(); k++ ) {
-			
-      // skip if it's the same gamma event as before
-      if( k == i ) continue;
-      fill_mb_evts.SetCorGamGen( ab.GetGen(k) );
-      fill_mb_evts.SetCorGamCluid( ab.GetClu(k) );
-      fill_mb_evts.SetCorGamCid( ab.GetCid(k) );
-      fill_mb_evts.SetCorGamSid( ab.GetSid(k) );
-      fill_mb_evts.SetCorGamGtd( ab.GetGtd(k) - ab.GetGtd(i) );
-      fill_mb_evts.SetCorGamTheta( gamma_theta[ab.GetClu(k)][ab.GetCid(k)%3][ab.GetSid(k)] );
-      fill_mb_evts.SetCorGamPhi( gamma_phi[ab.GetClu(k)][ab.GetCid(k)%3][ab.GetSid(k)] );
-			
-      if( ab.GetClu(i) != 8 && ab.GetClu(k) != 8 ) tdiff_pgg->Fill( ab.GetGtd(k) - ab.GetGtd(i) );
-			
-    } // End search for correlated gammas
-		
-    // Push back the temporary event to the mb_evts vector
-  } // i (looped over all gammas, non-addback)
-  
-  
+      // Initialise temporary event
+      fill_mb_evts.Initialise();
+      //    cout<<"initialize successful "<<i<<endl;
+      // Fill temporary event
+      fill_mb_evts.SetGen(ab.GetGen(i));
+      fill_mb_evts.SetCluid(ab.GetClu(i));
+      fill_mb_evts.SetCid(ab.GetCid(i));
+      fill_mb_evts.SetSid(ab.GetSid(i));
+      fill_mb_evts.SetTheta(gamma_theta[ab.GetClu(i)][ab.GetCid(i) % 3][ab.GetSid(i)]);
+      fill_mb_evts.SetPhi(gamma_phi[ab.GetClu(i)][ab.GetCid(i) % 3][ab.GetSid(i)]);
 
-  
-  mb_evts.push_back( fill_mb_evts );
-  }	
-	
+      // Do particles
+      //    if (pf.ReconstructedSize() > 0)
+      //    cout<<"pf.ReconstructedSize(): "<<pf.ReconstructedSize()<<endl;
+      for (unsigned int j = 0; j < pf.ReconstructedSize(); j++) {
+        tdiffPG = pf.GetTime(j) - ab.GetGtd(i);
+
+        // electrons
+        if (ab.GetClu(i) == 8) {
+          tdiff_ep->Fill(tdiffPG);
+
+          if (tMinRandomElectron <= tdiffPG && tdiffPG < tMaxRandomElectron)
+            coinc_flag = 1;
+          else if (tMinPromptElectron <= tdiffPG &&
+                   tdiffPG < tMaxPromptElectron)
+            coinc_flag = 0;
+          else
+            coinc_flag = -1;
+
+        }
+
+        // gamma-rays
+        else {
+          tdiff_gp->Fill(tdiffPG);
+          tdiff_gp_q[pf.GetQuad(j)]->Fill(tdiffPG - Cal->AdcTime(pf.GetQuad(j)));
+
+          if (tMinDelayed <= tdiffPG && tdiffPG < tMaxDelayed)
+            coinc_flag = 2;
+          else if (tMinRandom <= tdiffPG && tdiffPG < tMaxRandom)
+            coinc_flag = 1;
+          else if (tMinPrompt <= tdiffPG && tdiffPG < tMaxPrompt)
+            coinc_flag = 0;
+          else
+            coinc_flag = -1;
+        }
+
+        // Add particle
+        fill_mb_evts.SetPart(
+            pf.GetPEn(j), pf.GetNf(j), pf.GetNb(j), pf.GetSector(j),
+            pf.GetTime(j), (double)event->SuperCycleTime(),
+            (double)event->T1Time(), (float)tdiffPG, (int)coinc_flag,
+            pf.GetQuad(j), (int)pf.GetLaser(j));
+
+      }  // End loop All the particles
+
+      // Look for correlated gammas or electrons
+      for (unsigned int k = 0; k < ab.GetGenSize(); k++) {
+        // skip if it's the same gamma event as before
+        if (k == i) continue;
+        fill_mb_evts.SetCorGamGen(ab.GetGen(k));
+        fill_mb_evts.SetCorGamCluid(ab.GetClu(k));
+        fill_mb_evts.SetCorGamCid(ab.GetCid(k));
+        fill_mb_evts.SetCorGamSid(ab.GetSid(k));
+        fill_mb_evts.SetCorGamGtd(ab.GetGtd(k) - ab.GetGtd(i));
+        fill_mb_evts.SetCorGamTheta(gamma_theta[ab.GetClu(k)][ab.GetCid(k) % 3][ab.GetSid(k)]);
+        fill_mb_evts.SetCorGamPhi(gamma_phi[ab.GetClu(k)][ab.GetCid(k) % 3][ab.GetSid(k)]);
+
+        if (ab.GetClu(i) != 8 && ab.GetClu(k) != 8)
+          tdiff_pgg->Fill(ab.GetGtd(k) - ab.GetGtd(i));
+
+      }  // End search for correlated gammas
+
+      // Push back the temporary event to the mb_evts vector
+    }  // i (looped over all gammas, non-addback)
+
+    mb_evts.push_back(fill_mb_evts);
+  }
+
   return;
-	
 }
 
 // ------------------------------------------------------------------------ //
 // Particle-gamma coincidences for transfer
 // ------------------------------------------------------------------------ //
 void ParticleGammaTree::TREXCoincidences() {
-	
   // Start with particles
-  for( unsigned int i = 0; i < pf.ReconstructedSize(); i++ ) {
-		
+  for (unsigned int i = 0; i < pf.ReconstructedSize(); i++) {
     // Initialise temporary event
     fill_tr_evts.Initialise();
-		
+
     // Fill temporary event
-    fill_tr_evts.SetPen( pf.GetPEn(i), pf.GetPdE(i), pf.GetPErest(i) );
-    fill_tr_evts.SetQuad( pf.GetQuad(i) );
-    fill_tr_evts.SetSector( pf.GetSector(i) );
-    fill_tr_evts.SetNf( pf.GetNf(i) );
-    fill_tr_evts.SetNb( pf.GetNb(i) );
-    fill_tr_evts.SetTime( pf.GetTime(i) );
-    fill_tr_evts.SetLaser( pf.GetLaser(i) );
-    if( i == 0 ) fill_tr_evts.SetFirst( true );
-    else fill_tr_evts.SetFirst( false );
-    fill_tr_evts.SetT1( (double)event->T1Time() );
-    fill_tr_evts.SetSS( (double)event->SuperCycleTime() );
-		
-    // Do singles gammas 
-    for( unsigned int j = 0; j < ab.GetGenSize(); j++ ) {
-			
+    fill_tr_evts.SetPen(pf.GetPEn(i), pf.GetPdE(i), pf.GetPErest(i));
+    fill_tr_evts.SetQuad(pf.GetQuad(i));
+    fill_tr_evts.SetSector(pf.GetSector(i));
+    fill_tr_evts.SetNf(pf.GetNf(i));
+    fill_tr_evts.SetNb(pf.GetNb(i));
+    fill_tr_evts.SetTime(pf.GetTime(i));
+    fill_tr_evts.SetLaser(pf.GetLaser(i));
+    if (i == 0)
+      fill_tr_evts.SetFirst(true);
+    else
+      fill_tr_evts.SetFirst(false);
+    fill_tr_evts.SetT1((double)event->T1Time());
+    fill_tr_evts.SetSS((double)event->SuperCycleTime());
+
+    // Do singles gammas
+    for (unsigned int j = 0; j < ab.GetGenSize(); j++) {
       tdiffPG = pf.GetTime(i) - ab.GetGtd(j);
 
-      tdiff_gp->Fill( tdiffPG );
-      tdiff_gp_q[pf.GetQuad(i)]->Fill( tdiffPG - Cal->AdcTime( pf.GetQuad(i)) );
-				
-      if( tMinDelayed <= tdiffPG && tdiffPG < tMaxDelayed ) coinc_flag = 2;
-      else if( tMinRandom <= tdiffPG && tdiffPG < tMaxRandom ) coinc_flag = 1;
-      else if( tMinPrompt <= tdiffPG && tdiffPG < tMaxPrompt ) coinc_flag = 0;
-      else coinc_flag = -1;
-			
-      // Add particle
-      fill_tr_evts.SetGamma( ab.GetGen(j), ab.GetCid(j), ab.GetSid(j), ab.GetClu(j),
-			     gamma_theta[ab.GetClu(j)][ab.GetCid(j)%3][ab.GetSid(j)],
-			     gamma_phi[ab.GetClu(j)][ab.GetCid(j)%3][ab.GetSid(j)],
-			     tdiffPG, coinc_flag );
-			
-    } // j: gammas
-		
-    // Coincident particles
-    for( unsigned int j = 0; j < pf.ReconstructedSize(); j++ ) {
-			
-      if( i == j ) continue;
-      fill_tr_evts.SetCorPen( pf.GetPEn(j), pf.GetPdE(j), pf.GetPErest(j) );
-      fill_tr_evts.SetCorQuad( pf.GetQuad(j) );
-      fill_tr_evts.SetCorSector( pf.GetSector(j) );
-      fill_tr_evts.SetCorNf( pf.GetNf(j) );
-      fill_tr_evts.SetCorNb( pf.GetNb(j) );
-      fill_tr_evts.SetCorTd( pf.GetTime(i) - pf.GetTime(j) );
+      tdiff_gp->Fill(tdiffPG);
+      tdiff_gp_q[pf.GetQuad(i)]->Fill(tdiffPG - Cal->AdcTime(pf.GetQuad(i)));
 
-    } // j: second particle
-		
+      if (tMinDelayed <= tdiffPG && tdiffPG < tMaxDelayed)
+        coinc_flag = 2;
+      else if (tMinRandom <= tdiffPG && tdiffPG < tMaxRandom)
+        coinc_flag = 1;
+      else if (tMinPrompt <= tdiffPG && tdiffPG < tMaxPrompt)
+        coinc_flag = 0;
+      else
+        coinc_flag = -1;
+
+      // Add particle
+      fill_tr_evts.SetGamma(
+          ab.GetGen(j), ab.GetCid(j), ab.GetSid(j), ab.GetClu(j),
+          gamma_theta[ab.GetClu(j)][ab.GetCid(j) % 3][ab.GetSid(j)],
+          gamma_phi[ab.GetClu(j)][ab.GetCid(j) % 3][ab.GetSid(j)], tdiffPG,
+          coinc_flag);
+
+    }  // j: gammas
+
+    // Coincident particles
+    for (unsigned int j = 0; j < pf.ReconstructedSize(); j++) {
+      if (i == j) continue;
+      fill_tr_evts.SetCorPen(pf.GetPEn(j), pf.GetPdE(j), pf.GetPErest(j));
+      fill_tr_evts.SetCorQuad(pf.GetQuad(j));
+      fill_tr_evts.SetCorSector(pf.GetSector(j));
+      fill_tr_evts.SetCorNf(pf.GetNf(j));
+      fill_tr_evts.SetCorNb(pf.GetNb(j));
+      fill_tr_evts.SetCorTd(pf.GetTime(i) - pf.GetTime(j));
+
+    }  // j: second particle
+
     // Push back the temporary event to the mb_evts vector
-    tr_evts.push_back( fill_tr_evts );
-		
-  } // i
+    tr_evts.push_back(fill_tr_evts);
+
+  }  // i
 
   return;
-	
 }
 
 // ------------------------------------------------------------------------ //
 // Gamma-gamma coincidences for singles
 // ------------------------------------------------------------------------ //
 void ParticleGammaTree::GammaGammaCoincidences() {
-  for( unsigned int i = 0; i < ab.GetGenSize(); i++ ) {	
-    for( unsigned int j = 0; j < ab.GetGenSize(); j++ ) {
-      
-      if( j == i ) continue;
-			
+  for (unsigned int i = 0; i < ab.GetGenSize(); i++) {
+    for (unsigned int j = 0; j < ab.GetGenSize(); j++) {
+      if (j == i) continue;
+
       // Skip over the electrons
-      if( ab.GetClu(i) == 8 || ab.GetClu(j) == 8 ) continue;
+      if (ab.GetClu(i) == 8 || ab.GetClu(j) == 8) continue;
 
       tdiffGG = ab.GetGtd(j) - ab.GetGtd(i);
-			
-      tdiff_gg->Fill( tdiffGG );
-      gg->Fill( ab.GetGen(i), ab.GetGen(j) );
 
-      // Prompt gate			
-      if( tMinPromptGamma <= tdiffGG && tdiffGG < tMaxPromptGamma ) {
-	gg_pr->Fill( ab.GetGen(i), ab.GetGen(j) );
+      tdiff_gg->Fill(tdiffGG);
+      gg->Fill(ab.GetGen(i), ab.GetGen(j));
+
+      // Prompt gate
+      if (tMinPromptGamma <= tdiffGG && tdiffGG < tMaxPromptGamma) {
+        gg_pr->Fill(ab.GetGen(i), ab.GetGen(j));
       }
-		
 
       // Time-random gate
-      if( tMinRandomGamma <= TMath::Abs( tdiffGG ) && TMath::Abs( tdiffGG ) < tMaxRandomGamma ) {
-	gg_ran->Fill( ab.GetGen(i), ab.GetGen(j) );
+      if (tMinRandomGamma <= TMath::Abs(tdiffGG) &&
+          TMath::Abs(tdiffGG) < tMaxRandomGamma) {
+        gg_ran->Fill(ab.GetGen(i), ab.GetGen(j));
       }
-    }		
-  }	
-  return;	
+    }
+  }
+  return;
 }
 
 // ------------------------------------------------------------------------ //
 // Main Loop and logic of the particle-gamma builder
 // ------------------------------------------------------------------------ //
-void ParticleGammaTree::Loop( string outputfilename ) {
-	
+void ParticleGammaTree::Loop(string outputfilename) {
   // Open output file
-  TFile* outfile = new TFile( outputfilename.c_str(), "recreate" );
-  if( outfile->IsZombie() ) {
-		
+  TFile* outfile = new TFile(outputfilename.c_str(), "recreate");
+  if (outfile->IsZombie()) {
     cerr << "Problem with output file: " << outputfilename << endl;
     return;
-
   }
-	
+
   // Initialise variables
   InitialiseVariables();
-	
+
   // Setup histograms
   SetupHistograms();
-	
+
   // Setup the addback or gamma finder
-  ab.SetEvent( event );
-  ab.SetCalibration( Cal );
-  ab.SetOutputFile( outfile );
+  ab.SetEvent(event);
+  ab.SetCalibration(Cal);
+  ab.SetOutputFile(outfile);
   ab.InitialiseHistograms();
   ab.InitialiseVariables();
 
   //  cout<<"addback setup done"<<endl;
-  
+
   // Setup the particle finder
-  pf.SetEvent( event );
-  pf.SetCalibration( Cal );
-  pf.SetOutputFile( outfile );
+  pf.SetEvent(event);
+  pf.SetCalibration(Cal);
+  pf.SetOutputFile(outfile);
   pf.InitialiseHistograms();
 
-	
   // ------------------------------------------------------------------------ //
   // Start loop over number of entries
   // ------------------------------------------------------------------------ //
   Double_t nentries = fTree->GetEntries();
   int nbytes = 0;
   int status;
-	
+
   // Test - comment out for runs
-  //nentries = 10000;
-	
-  // Do loop	
-  for( unsigned int i = 0; i < nentries; i++ ) {
+  // nentries = 10000;
 
+  // Do loop
+  for (unsigned int i = 0; i < nentries; i++) {
     status = fTree->GetEvent(i);
-		
-    if( status == -1 ) {
 
+    if (status == -1) {
       cerr << "Error occured, couldn't read entry " << i << " from tree ";
-      cerr << fTree->GetName() << " in file " << fTree->GetFile()->GetName() << endl;
+      cerr << fTree->GetName() << " in file " << fTree->GetFile()->GetName()
+           << endl;
       return;
-			
-    }
-		
-    else if( status == 0 ) {
 
+    }
+
+    else if (status == 0) {
       cerr << "Error occured, entry " << i << " in tree " << fTree->GetName();
-      cerr << " in file " << fTree->GetFile()->GetName() << " doesn't exist" << endl;
+      cerr << " in file " << fTree->GetFile()->GetName() << " doesn't exist"
+           << endl;
       return;
-
     }
-		
+
     nbytes += status;
-		
-    // ------------------------------------------------------------------------ //
-    // Clean trees, particles and gammas/electrons
-    // ------------------------------------------------------------------------ //
+
+    // ------------------------------------------------------------------------
+    // // Clean trees, particles and gammas/electrons
+    // ------------------------------------------------------------------------
+    // //
     ClearEvt();
     ab.ClearEvt();
     pf.ClearEvt();
     pf.NextAdc();
-		
 
-    // ------------------------------------------------------------------------ //
-    // All DGF events - Build gamma-ray events in Miniball (and beam-dump)
-    // ------------------------------------------------------------------------ //
-    ab.MakeGammaRays( addback, reject, segsum );
+    // ------------------------------------------------------------------------
+    // // All DGF events - Build gamma-ray events in Miniball (and beam-dump)
+    // ------------------------------------------------------------------------
+    // //
+    ab.MakeGammaRays(addback, reject, segsum);
 
-		
-    // ------------------------------------------------------------------------ //
-    // All ADC events
-    // ------------------------------------------------------------------------ //
-    // cout<<"ADC: "<<event->NumberOfAdcs()<<" vs DGF: "<<event->NumberOfDgfs()<<endl;
-    for( unsigned int j = 0; j < event->NumberOfAdcs(); j++ ) {
-
+    // ------------------------------------------------------------------------
+    // // All ADC events
+    // ------------------------------------------------------------------------
+    // // cout<<"ADC: "<<event->NumberOfAdcs()<<" vs DGF:
+    // "<<event->NumberOfDgfs()<<endl;
+    for (unsigned int j = 0; j < event->NumberOfAdcs(); j++) {
       adc_num = event->Adc(j)->ModuleNumber();
       adc_t = event->Adc(j)->Time();
-			
-      pf.SetModule( adc_num );
-      pf.SetTime( adc_t + Cal->AdcTime( adc_num ) );
-      pf.SetLaser( event->Adc(j)->LaserOn() );
-      pf.SetSubEvent( event->Adc(j)->SubEvent() );
+
+      pf.SetModule(adc_num);
+      pf.SetTime(adc_t + Cal->AdcTime(adc_num));
+      pf.SetLaser(event->Adc(j)->LaserOn());
+      pf.SetSubEvent(event->Adc(j)->SubEvent());
 
       // Standard CD/CLX setup or SPEDE
-      if( ( cdpad || spede ) && adc_num < 4 ) {
-				
-	pf.FindCDParticles();
-	ParticleCounterQ[adc_num] += pf.ReconstructCD( false, false );
-	//       	cout<<"After ReconstructCD: "<<pf.ReconstructedSize()<<endl;
-	pf.NextAdc();
-	//	cout<<"after nextAdc: "<<pf.ReconstructedSize()<<endl;			
+      if ((cdpad || spede) && adc_num < 4) {
+        pf.FindCDParticles();
+        ParticleCounterQ[adc_num] += pf.ReconstructCD(false, false);
+        //       	cout<<"After ReconstructCD:
+        //       "<<pf.ReconstructedSize()<<endl;
+        pf.NextAdc();
+        //	cout<<"after nextAdc: "<<pf.ReconstructedSize()<<endl;
       }
-			
+
       // CREX
-      else if( crex && adc_num < 4 ) {
-	cout<<"This should not be "<<endl;
-	pf.FindCREXParticles();
-	ParticleCounterQ[adc_num] += pf.ReconstructBarrel( false, true );
-	ParticleCounterQ[adc_num] += pf.ReconstructCD( false, true );
-	pf.NextAdc();
-				
+      else if (crex && adc_num < 4) {
+        cout << "This should not be " << endl;
+        pf.FindCREXParticles();
+        ParticleCounterQ[adc_num] += pf.ReconstructBarrel(false, true);
+        ParticleCounterQ[adc_num] += pf.ReconstructCD(false, true);
+        pf.NextAdc();
+
       }
-			
+
       // T-REX
-      else if( trex && adc_num < 8 ) {
-	cout<<"This should not be "<<endl;
-	pf.FindTREXParticles();
-				
-	if( adc_num%2 == 1 ) {
-					
-	  ParticleCounterQ[adc_num/2] += pf.ReconstructBarrel( true, false );
-	  ParticleCounterQ[adc_num/2] += pf.ReconstructCD( true, false );
-	  pf.NextAdc();
-					
-	}
-				
+      else if (trex && adc_num < 8) {
+        cout << "This should not be " << endl;
+        pf.FindTREXParticles();
+
+        if (adc_num % 2 == 1) {
+          ParticleCounterQ[adc_num / 2] += pf.ReconstructBarrel(true, false);
+          ParticleCounterQ[adc_num / 2] += pf.ReconstructCD(true, false);
+          pf.NextAdc();
+        }
+
       }
-			
+
       // SPEDE
-      else if( spede && adc_num == 4 ) {
-				
-	ab.SetModule( adc_num );
-	ab.SetTime( adc_t + Cal->AdcTime( adc_num ) );
-	ab.SetSubEvent( event->Adc(j)->SubEvent() );
-	ab.MakeElectrons();
-				
+      else if (spede && adc_num == 4) {
+        ab.SetModule(adc_num);
+        ab.SetTime(adc_t + Cal->AdcTime(adc_num));
+        ab.SetSubEvent(event->Adc(j)->SubEvent());
+        ab.MakeElectrons();
+
       }
-			
+
       // Ionisation chamber
-      else if( ionch && ( ( !trex && adc_num == 4 ) || ( trex && adc_num == 9 ) ) ) {
+      else if (ionch && ((!trex && adc_num == 4) || (trex && adc_num == 9))) {
+        pf.IonisationChamber();
 
-	pf.IonisationChamber();
+      }  // ionisation chamber
 
-      } // ionisation chamber
-			
-    } // j - adcs
-		
+    }  // j - adcs
+
     //    cout<<"just before: "<<pf.ReconstructedSize()<<endl;
-    // ------------------------------------------------------------------------ //
-    // Particle-gamma and gamma-gamma coincidences
-    // ------------------------------------------------------------------------ //
-    if( trex ) TREXCoincidences();
-    else CLXCoincidences();
+    // ------------------------------------------------------------------------
+    // // Particle-gamma and gamma-gamma coincidences
+    // ------------------------------------------------------------------------
+    // //
+    if (trex)
+      TREXCoincidences();
+    else
+      CLXCoincidences();
     GammaGammaCoincidences();
-		
 
-    // ------------------------------------------------------------------------ //
-    // Fill the CLX or the TREX tree
-    // ------------------------------------------------------------------------ //
-    if( trex ) FillTREXTree();
-    else FillCLXTree();
-		
+    // ------------------------------------------------------------------------
+    // // Fill the CLX or the TREX tree
+    // ------------------------------------------------------------------------
+    // //
+    if (trex)
+      FillTREXTree();
+    else
+      FillCLXTree();
 
     // Progress bar
-    if( i % 50000 == 0 ) {
-
+    if (i % 50000 == 0) {
       cout << setw(5) << setiosflags(ios::fixed) << setprecision(1);
-      cout << (100.*i)/nentries << "% done\r" << flush;
-
+      cout << (100. * i) / nentries << "% done\r" << flush;
     }
 
-  } // i
+  }  // i
 
   cout << "Particle distribution:" << endl;
-  for( unsigned int i = 0; i < 4; i++ ) cout << " Q" << i << " fired: " << ParticleCounterQ[i] << endl;
+  for (unsigned int i = 0; i < 4; i++)
+    cout << " Q" << i << " fired: " << ParticleCounterQ[i] << endl;
 
   outfile->Write();
   outfile->Close();
 
   return;
-	
 }
 
 #endif

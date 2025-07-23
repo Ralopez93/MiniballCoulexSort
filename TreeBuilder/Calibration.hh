@@ -1,21 +1,21 @@
 #ifndef __CALIBRATION_HH
 #define __CALIBRATION_HH
 
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <string>
 #include <array>
 #include <cstdlib>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
 
-#include "TSystem.h"
 #include "TEnv.h"
-#include "TRandom.h"
 #include "TMath.h"
+#include "TRandom.h"
+#include "TSystem.h"
 
 // Command line interface
 #ifndef __COMMAND_LINE_INTERFACE
-# include "CommandLineInterface.hh"
+#include "CommandLineInterface.hh"
 #endif
 
 using namespace std;
@@ -27,84 +27,75 @@ using namespace std;
 /// There is potential to include the demux of T/C-REX in here too.
 
 class Calibration {
-
-public:
-
-	Calibration( string filename );
-	virtual ~Calibration();
-	void ReadCalibration();
-	void PrintCalibration();
-	void SetFile( string filename ){
-		fInputFile = filename;
-	}
-	const string InputFile(){
-		return fInputFile;
-	}
+ public:
+  Calibration(string filename);
+  virtual ~Calibration();
+  void ReadCalibration();
+  void PrintCalibration();
+  void SetFile(string filename) { fInputFile = filename; }
+  const string InputFile() { return fInputFile; }
   vector<int> GetDeadSegments(int clu, int core);
-	double DgfEnergy( int dgf, int chan, unsigned short raw );
-	double AdcEnergy( int adc, int chan, unsigned short raw );
-	double AdcThreshold( int adc, int chan );
-	double AdcTime( int adc );
-  	double CryTime( int cry );
-  	double ClusterTheta( int clu );
-	double ClusterPhi( int clu );
-	double ClusterAlpha( int clu );
-	double ClusterR( int clu );
-	double ZOffset();
-	
-	// Function to set verbosity
-	inline void SetVerbosity( int v ){
-		fVerbose = v;
-		return;
-	};
+  double DgfEnergy(int dgf, int chan, unsigned short raw);
+  double AdcEnergy(int adc, int chan, unsigned short raw);
+  double AdcThreshold(int adc, int chan);
+  double AdcTime(int adc);
+  double CryTime(int cry);
+  double ClusterTheta(int clu);
+  double ClusterPhi(int clu);
+  double ClusterAlpha(int clu);
+  double ClusterR(int clu);
+  double ZOffset();
 
+  // Function to set verbosity
+  inline void SetVerbosity(int v) {
+    fVerbose = v;
+    return;
+  };
 
-private:
+ private:
+  int fVerbose;
+  string fInputFile;
 
-	int fVerbose;
-	string fInputFile;
+  TRandom* fRand;
 
-	TRandom* fRand;
-  
-	vector< vector<bool> > fDgfActive;
-	vector< vector<long double> > fDgfGainQuadr;
-	vector< vector<double> > fDgfOffset;
-	vector< vector<double> > fDgfGain;
-	vector< vector<double> > fAdcOffset;
-	vector< vector<double> > fAdcGain;
-	vector< vector<double> > fAdcThreshold;
+  vector<vector<bool> > fDgfActive;
+  vector<vector<long double> > fDgfGainQuadr;
+  vector<vector<double> > fDgfOffset;
+  vector<vector<double> > fDgfGain;
+  vector<vector<double> > fAdcOffset;
+  vector<vector<double> > fAdcGain;
+  vector<vector<double> > fAdcThreshold;
 
-	vector< double > fClusterTheta;
-	vector< double > fClusterPhi;
-	vector< double > fClusterR;
-	vector< double > fClusterAlpha;
+  vector<double> fClusterTheta;
+  vector<double> fClusterPhi;
+  vector<double> fClusterR;
+  vector<double> fClusterAlpha;
 
-	vector<double> fAdcTime;
-  vector<double> fCryTime; // time offset for each crystal
+  vector<double> fAdcTime;
+  vector<double> fCryTime;  // time offset for each crystal
 
-	double zoffset;
+  double zoffset;
 
-	vector< double > fBeamdumpOffset;
-	vector< double > fBeamdumpGain;
-	vector< double > fBeamdumpGainQuadr;
-	
-	vector< unsigned short > deadseg;
-	vector< array< unsigned short, 2 > > swapseg;
-	array< unsigned short, 2 > pairseg;
+  vector<double> fBeamdumpOffset;
+  vector<double> fBeamdumpGain;
+  vector<double> fBeamdumpGainQuadr;
 
-	double RawRandomized;
+  vector<unsigned short> deadseg;
+  vector<array<unsigned short, 2> > swapseg;
+  array<unsigned short, 2> pairseg;
 
-	int fNofDgfs;
-	int fNofDgfChans;
-	int fNofAdcs;
-  	int fNofCrys;
-  	int fNofAdcChans;
-	int fNofClusters;
- 
-	int fBeamdumpDgf;
+  double RawRandomized;
 
-	ClassDef(Calibration, 1)
-   
+  int fNofDgfs;
+  int fNofDgfChans;
+  int fNofAdcs;
+  int fNofCrys;
+  int fNofAdcChans;
+  int fNofClusters;
+
+  int fBeamdumpDgf;
+
+  ClassDef(Calibration, 1)
 };
 
 #endif
