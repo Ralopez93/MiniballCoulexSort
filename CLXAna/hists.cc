@@ -38,8 +38,9 @@ void hists::Initialise(doppler dc_) {
   // particle branches
   tree = new TTree("doppler", "doppler");
   tree->Branch("laser", &laser, "laser/I");
-  tree->Branch("np", &np, "np/I"); //
-  tree->Branch("tdpp", &tdpp, "tdpp/D"); // time difference for 2p events; 0 for 1p event
+  tree->Branch("np", &np, "np/I");          //
+  tree->Branch("tdpp", &tdpp, "tdpp/D");    // time difference for 2p events; 0 for 1p event
+  tree->Branch("time", time, "time[np]/D");       // Particle timestamp.
   tree->Branch("pid", pid, "pid[np]/I");    // particle ID: 0: target-like, 1: beam-like as defined by cuts
   tree->Branch("quad", quad, "quad[np]/I"); // quadrant ID
   tree->Branch("ring", ring, "ring[np]/I"); // ring ID
@@ -125,6 +126,7 @@ bool hists::isGood2p(int quad_diff, float time_diff, float ppwin, int cut2) {
  * @param Psec Sector of C-REX (0 = FCD; 1 = FBarrel; 2 = BBarrel; 3 = BCD).
  * @param Pquad Detector (quadrant) number of particle
  * @param Ptd Particle-gamma time difference in 25 ns timestamps.
+ * @param time Particle timestamp.
  */
 void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
                      int GSid, vector<float> GCor_GEn, vector<float> GCor_GTh,
@@ -132,7 +134,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
                      vector<int> GCor_GCid, vector<int> GCor_GSid,
                      vector<float> GCor_Gtd, vector<int> Laser,
                      vector<float> PEn, vector<int> Pnf, vector<int> Pnb,
-                     vector<int> Psec, vector<int> Pquad, vector<float> Ptd) {
+                     vector<int> Psec, vector<int> Pquad, vector<float> Ptd, vector<double> Ptimes) {
   laser_passed.resize(0);
   PEn_passed.resize(0);
   Pnf_passed.resize(0);
@@ -142,6 +144,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
   Ptd_passed.resize(0);
   Ppid_passed.resize(0);
   PTheta_passed.resize(0);
+  times_passed.resize(0);
 
   for (int i = 0; i < PEn.size(); i++) {
     // Saving theta early. Since it is randomly assigned (within some interval),
@@ -160,6 +163,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       Ptd_passed.push_back(Ptd[i]);
       Ppid_passed.push_back(pid);
       PTheta_passed.push_back(PTheta);
+      times_passed.push_back(Ptimes[i]);
     }
   }
 
@@ -172,6 +176,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
     // Here [0] signifies the detected particle. Can be beam or target.
     np = 1;
     tdpp = 0.;
+    time[0] = times_passed[0];
     laser = laser_passed[0];
     ep[0] = PEn_passed[0];
     quad[0] = Pquad_passed[0];
@@ -274,6 +279,9 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       np = 2;
       tdpp = Ptd_passed[it] - Ptd_passed[ib];
 
+      time[0] = times_passed[ib];
+      time[1] = times_passed[it];
+
       // ordering: 0 for beam, 1 for target (as for 110Sn)
       quad[1] = Pquad_passed[it];
       ring[1] = Pnf_passed[it];
@@ -338,6 +346,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
         np = 1;
         //	 b2p = 0;
         tdpp = 0.;
+        time[0] = times_passed[j];
         ep[0] = PEn_passed[j];
         quad[0] = Pquad_passed[j];
         ring[0] = Pnf_passed[j];
@@ -467,6 +476,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       np = 1;
       //	 b2p = 0;
       tdpp = 0.;
+      time[0] = times_passed[v1p[j]];
       ep[0] = PEn_passed[v1p[j]];
       quad[0] = Pquad_passed[v1p[j]];
       ring[0] = Pnf_passed[v1p[j]];
@@ -556,6 +566,8 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       laser = laser_passed[ib]; // take ib as default
       np = 2;
       tdpp = Ptd_passed[it] - Ptd_passed[ib];
+      time[0] = times_passed[ib];
+      time[1] = times_passed[it];
 
       // ordering: 0 for beam, 1 for target (as for 110Sn)
       quad[1] = Pquad_passed[it];

@@ -44,6 +44,7 @@ public:
   int laser; // 0 for laser off, 1 for laser on
   int np;
   double tdpp;
+  double time[2];
   int pid[2];
   int quad[2];
   int ring[2];
@@ -92,7 +93,7 @@ public:
 		vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <int> GCor_GCid, vector <int> GCor_GSid,
 		vector <float> GCor_Gtd,
 		vector <int> Laser, vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec,
-		vector <int> Pquad, vector <float> Ptd);
+		vector <int> Pquad, vector <float> Ptd, vector<double> Ptimes);
   
 private:
   vector<int> laser_passed;
@@ -104,6 +105,7 @@ private:
   vector<float> Ptd_passed;
   vector<int> Ppid_passed;
   vector<float> PTheta_passed;
+  vector<double> times_passed;
 	//ClassDef(hists,1);
 
   bool isGood2p(int quad_diff, float time_diff, float ppwin, int cut2);
