@@ -482,7 +482,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
       quad[0] = Pquad_passed[v1p[j]];
       ring[0] = Pnf_passed[v1p[j]];
       sect[0] = Pnb_passed[v1p[j]];
-      thp[0] = PTheta_passed[Pnf_passed[v1p[j]]];
+      thp[0] = PTheta_passed[v1p[j]];
       php[0] = dc.GetPPhi(Pquad_passed[v1p[j]], Pnb_passed[v1p[j]], Psec_passed[v1p[j]]);
       phr[0] = dc.GetQPhi(Pquad_passed[v1p[j]], Pnb_passed[v1p[j]], Psec_passed[v1p[j]]);
       pid[0] = Ppid_passed[v1p[j]];
@@ -624,10 +624,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
 
       tree->Fill();
     }
-
-  // End of 3-4p events.
-  }
-  // End of FillTree
-}
+  } // End of 3-4p events.
+} // End of FillTree
 
 #endif
