@@ -21,6 +21,7 @@
 #include "g_clx.hh"
 #endif
 
+
 void g_clx::Loop(string outputfilename) {
   if (fChain == 0)
     return;
@@ -28,11 +29,29 @@ void g_clx::Loop(string outputfilename) {
   // Output file name
   TFile *out = new TFile(outputfilename.c_str(), "RECREATE");
 
+  // There are 8 clusters, each with 3 crystals.
+  std::vector<Cluster> clusters = {};
+
   // Create doppler instance and set experimental parameters
   doppler dc;
   dc.ExpDefs(Zb, Ab, Zt, At, Eb, Ex, thick, depth, cddist, cdoffset, deadlayer,
              contaminant, spededist, Bcut, Tcut, srim, usekin, calfile);
-  dc.mbAngles(); // re-define MB angles
+  dc.mbAngles(clusters); // re-define MB angles
+
+  if (clusters.size() != 8) {
+    std::cerr << "Failed to set crystal angles. " << std::endl;
+    return;
+  }
+
+  std::cout << "Printing angles for Crystals: (theta, phi)." << std::endl;
+  for (int i = 0; i < clusters.size(); i++) {
+    std::cout << "Cluster " << i << "\n"
+              << "\tCrystal 0 (" << clusters[i].crystals[0].theta << ", " << clusters[i].crystals[0].phi << ")\n"
+              << "\tCrystal 1 (" << clusters[i].crystals[1].theta << ", " << clusters[i].crystals[1].phi << ")\n"
+              << "\tCrystal 2 (" << clusters[i].crystals[2].theta << ", " << clusters[i].crystals[2].phi << ")\n"
+              << std::endl;
+  }
+
   // Create stopping power curves from the srim output files
   // Comment out to use the default parameters in doppler.hh
   // stoppingpowers( BT, TT, BA, TA, BC, TC )

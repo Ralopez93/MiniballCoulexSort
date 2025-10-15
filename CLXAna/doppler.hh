@@ -35,6 +35,15 @@ using namespace std;
 # include "MBGeometry.hh"
 #endif
 
+typedef struct _Crystal {
+  double theta;
+  double phi;
+} Crystal;
+
+typedef struct _Cluster {
+  std::vector<Crystal> crystals;
+} Cluster;
+
 /// A class for performing all aspects of the Doppler correction
 
 /// The doppler class has a whole suite of functions for performing the
@@ -89,7 +98,7 @@ public:
   bool	stoppingpowers( bool BT, bool TT, bool BS, bool TS, bool BC, bool TC );
   bool	stoppingpowers( string opt );
   void	reactionEnergy();
-  void mbAngles(); // JP: re-define MB angles for tuning
+  void mbAngles(std::vector<Cluster> &clusters); // JP: re-define MB angles for tuning
 
   static string	convertInt( int number );
   static string	convertFloat( float number );

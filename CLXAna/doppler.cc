@@ -55,15 +55,17 @@ void doppler::reactionEnergy() {
   return;
 }
 
-void doppler::mbAngles() {
+void doppler::mbAngles(std::vector<Cluster> &clusters) {
   // call calibration
   Cal = new Calibration(calfile);
   for (int i = 0; i < 8; i++) { // loop over clusters
+    Cluster cluster;
 
     mbg.SetupCluster(Cal->ClusterTheta(i), Cal->ClusterPhi(i),
                      Cal->ClusterAlpha(i), Cal->ClusterR(i), Cal->ZOffset());
 
     for (unsigned int j = 0; j < 3; j++) { // loop over cores
+      Crystal crystal;
 
       gamma_theta[i][j][0] = mbg.GetCoreTheta(j) * TMath::DegToRad();
       gamma_phi[i][j][0] = mbg.GetCorePhi(j) * TMath::DegToRad();
@@ -73,7 +75,13 @@ void doppler::mbAngles() {
         gamma_theta[i][j][k + 1] = mbg.GetSegTheta(j, k) * TMath::DegToRad();
         gamma_phi[i][j][k + 1] = mbg.GetSegPhi(j, k) * TMath::DegToRad();
       }
+
+      crystal.theta = gamma_theta[i][j][0] * TMath::RadToDeg();
+      crystal.phi = gamma_phi[i][j][0] * TMath::RadToDeg();
+
+      cluster.crystals.push_back(crystal);
     }
+    clusters.push_back(cluster);
   }
 }
 
