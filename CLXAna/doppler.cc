@@ -85,8 +85,7 @@ void doppler::mbAngles(std::vector<Cluster> &clusters) {
   }
 }
 
-bool doppler::stoppingpowers(bool BT, bool TT, bool BS, bool TS, bool BC,
-                             bool TC) {
+bool doppler::stoppingpowers(bool BT, bool TT, bool BS, bool TS, bool BC, bool TC) {
 
   /// Initialisation of stopping powers
   bool success = true;
@@ -199,7 +198,7 @@ bool doppler::stoppingpowers(string opt) {
     cout << "Cannot open " << srimfilename << endl;
     return false;
   }
-  cout << title.c_str() << endl;
+  cout << "Using SRIM file: " << srimfilename << ". Title: " << title.c_str() << endl;
   gSP[index]->SetTitle(title.c_str());
 
   string line, units, tmp_str;
@@ -255,8 +254,7 @@ bool doppler::stoppingpowers(string opt) {
   cout << "stopping powers defined" << endl;
   TCanvas *c = new TCanvas();
   gSP[index]->Draw("A*");
-  string pdfname =
-      srimfilename.substr(0, srimfilename.find_last_of(".")) + ".pdf";
+  string pdfname = srimfilename.substr(0, srimfilename.find_last_of(".")) + ".pdf";
   c->SetLogx();
   c->SaveAs(pdfname.c_str());
 
@@ -357,6 +355,8 @@ bool doppler::CutG_en2hit(float BEn, float TEn) {
   /// Returns true or false if the 2d graphical cut on beam and target enegry
   /// passes Look into the "en2hit" histogram after changing return value of
   /// this function
+
+  // THIS FUNCTION DOES NOT SEEM TO BE USED!???
 
   TCutG *cutg = new TCutG("CUTG", 18);
   cutg->SetPoint(0, 94.485, 426.337);
