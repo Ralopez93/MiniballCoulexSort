@@ -170,7 +170,7 @@ bool doppler::stoppingpowers(string opt) {
 
     srimfilename += "_Si.txt";
     title += " in the Si dead layer";
-    title += ";Ion energy [keV];Stopping power [MeV/mm]";
+    title += ";Ion energy [keV];Stopping power [MeV/(mg/cm^2)]";
     index += 2;
 
   }
@@ -236,8 +236,8 @@ bool doppler::stoppingpowers(string opt) {
     else if (units == "GeV")
       BEn *= 1E6;
 
-    total = nucl + elec; // MeV / ( mg / cm^2 )
-    //		cout<<index<<" "<<BEn<<" "<<total<<endl;
+    // MeV / ( mg / cm^2 )
+    total = nucl + elec; 
     gSP[index]->SetPoint(p, BEn, total);
 
     // Get next line
@@ -668,19 +668,19 @@ float doppler::GetBEn(float TEn, float TTheta) {
 
 float doppler::GetELoss(float Ei, float dist, int opt, string combo) {
 
-  /// Returns the energy loss at a given initial energy and distance travelled
-  /// in the target, the contaminant layer or Si dead layer
-  /// Ei is the initial energy in keV, return value is also in keV
-  /// dist is the distance travelled in the target in mg/cm2
-  /// opt = 0 calculates normal energy loss as particle moves through target
-  /// (default) opt = 1 calculates energy increase, i.e. tracing particle back
-  /// to reaction point combo = "BT", "TT", "BC", "TC", "BS" or "TS" for the
-  /// beam in target, target in target, beam in contaminant, target in
-  /// contaminant, beam in Si or target in Si, respectively. Stopping power data
-  /// is taken from SRIM the output files must be placed in the './srim/' folder
-  /// with the format 62Fe_109Ag.txt, 62Fe_Si.txt, 109Ag_109Ag.txt or
-  /// 109Ag_Si.txt, for combo = "BT", "TT", "BS" and "TS", repsectively. The
-  /// srim file should be in units of MeV/(mg/cm^2)
+  /** Returns the energy loss at a given initial energy and distance travelled in the target,
+   *  the contaminant layer or Si dead layer Ei is the initial energy in keV,
+   *  return value is also in keV dist is the distance travelled in the target in mg/cm2
+   *  opt = 0 calculates normal energy loss as particle moves through target
+   *  (default) opt = 1 calculates energy increase, i.e. tracing particle back
+   *  to reaction point combo = "BT", "TT", "BC", "TC", "BS" or "TS" for the
+   *  beam in target, target in target, beam in contaminant, target in
+   *  contaminant, beam in Si or target in Si, respectively. Stopping power data
+   *  is taken from SRIM the output files must be placed in the './srim/' folder
+   *  with the format 62Fe_109Ag.txt, 62Fe_Si.txt, 109Ag_109Ag.txt or
+   *  109Ag_Si.txt, for combo = "BT", "TT", "BS" and "TS", repsectively. The
+   *  srim file should be in units of MeV/(mg/cm^2)
+   */
 
   double dedx = 0;
   int Nmeshpoints = 20; // number of steps to take in integration
