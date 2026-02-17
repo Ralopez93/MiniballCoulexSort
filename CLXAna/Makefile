@@ -76,7 +76,7 @@ SpedeGeometry.o: SpedeGeometry.cc SpedeGeometry.hh
 
 clean:
 	rm -f *.o
-	rm -f CLXAnaDict.cc CLXAnaDict$(DICTEXT)
+	rm -f CLXAnaDict.cc CLXAnaDict$(DICTEXT) CLXAna
 
 # Root stuff
 DEPENDENCIES =	Calibration.hh \
