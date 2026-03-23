@@ -103,6 +103,469 @@ bool hists::isGood2p(int quad_diff, float time_diff, float ppwin, int cut2) {
   return retval;
 }
 
+void hists::doRoutine1P(float GEn, float GTh, float GPh, int GCluid, int GCid,
+                        int GSid, vector<float> GCor_GEn, vector<float> GCor_GTh,
+                        vector<float> GCor_GPh, vector<int> GCor_GCluID,
+                        vector<int> GCor_GCid, vector<int> GCor_GSid,
+                        vector<float> GCor_Gtd) {
+
+  // Here [0] signifies the detected particle. Can be beam or target.
+  np = 1;
+  tdpp = 0.;
+  time[0] = times_passed[0];
+  laser = laser_passed[0];
+  ep[0] = PEn_passed[0];
+  quad[0] = Pquad_passed[0];
+  ring[0] = Pnf_passed[0];
+  sect[0] = Pnb_passed[0];
+  thp[0] = PTheta_passed[0];
+  php[0] = dc.GetPPhi(Pquad_passed[0], Pnb_passed[0], Psec_passed[0]);
+  phr[0] = dc.GetQPhi(Pquad_passed[0], Pnb_passed[0], Psec_passed[0]);
+  pid[0] = Ppid_passed[0];
+
+  ng = 1 + GCor_GEn.size();
+  td[0] = Ptd_passed[0];
+  eg[0] = GEn;
+  thg[0] = GTh;
+  phg[0] = GPh;
+  clu[0] = GCluid;
+  cry[0] = GCid;
+  seg[0] = GSid;
+  for (int i = 0; i < ng - 1; i++) {
+    eg[i + 1] = GCor_GEn[i];
+    td[i + 1] = GCor_Gtd[i];
+    thg[i + 1] = GCor_GTh[i];
+    phg[i + 1] = GCor_GPh[i];
+    clu[i + 1] = GCor_GCluID[i];
+    cry[i + 1] = GCor_GCid[i];
+    seg[i + 1] = GCor_GSid[i];
+  }
+
+  if (pid[0] == PID_TARG) { // Target detected, doppler corrections.
+    // Target angles
+
+    if (dc.UseKin()) { // Use the two-body kinematics. Not using this right?
+      ep[0] = dc.GetTEnKinT(thp[0]);
+      thr[0] = dc.GetBThLabT(thp[0]);
+      er[0] = dc.GetBEnKinT(thp[0]);
+    } else { // Use the particle energy and angle.
+      ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
+      er[0] = dc.GetBEn(PEn_passed[0], thp[0]);
+      thr[0] = dc.GetBTh(thp[0]);
+    }
+
+    for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction.
+      atg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
+      abg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
+      etg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAt());
+      ebg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAb());
+    }
+    // End of target detected.
+  } else if (pid[0] == PID_BEAM) {
+    if (dc.UseKin()) { // Use the two-body kinematics. Not using this right?
+      ep[0] = dc.GetBEnKinB(thp[0]);
+      thr[0] = dc.GetTThLabB(thp[0]);
+      er[0] = dc.GetTEnKinB(thp[0]);
+    } else { // Use the particle energy and angle.
+      ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
+      er[0] = dc.GetTEn(PEn_passed[0], thp[0]);
+      thr[0] = dc.GetTTh(Pnf_passed[0], thp[0]);
+    }
+
+    for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction 
+      abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
+      atg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
+      ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
+      etg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAt());
+    }
+    // End of beam detected.
+  } else
+    throw std::runtime_error("Invalid PID during FillTree");
+
+  tree->Fill();
+  // 1p case done.
+}
+
+void hists::doRoutine2P(float GEn, float GTh, float GPh, int GCluid, int GCid,
+                        int GSid, vector<float> GCor_GEn, vector<float> GCor_GTh,
+                        vector<float> GCor_GPh, vector<int> GCor_GCluID,
+                        vector<int> GCor_GCid, vector<int> GCor_GSid,
+                        vector<float> GCor_Gtd) {
+  int np_passed = 2;
+  // Start of 2-particle case. Check quadrant correlation (diff = 2) and in. Start checking if "good" 2p candidate.
+  // Here [0] signifies the beam-like particle, [1] target-like particle.
+  float time_diff = TMath::Abs(Ptd_passed[0] - Ptd_passed[1]); // 2p time difference in ticks of 25 ns
+  int quad_diff = TMath::Abs(Pquad_passed[0] - Pquad_passed[1]); // quadrant number difference
+
+  // returns 0 for beam/target passed, 1 for target/beam passed, 
+  // -1 for small 2p angles (ring > 10 (innermost = 16) for both)?
+  int cut2 = dc.Cut_2p(PEn_passed[0], Pnf_passed[0], PTheta_passed[0],
+                        PEn_passed[1], Pnf_passed[1], PTheta_passed[1]);  
+
+  if (isGood2p(quad_diff, time_diff, ppwin, cut2)) { 
+    // we have good 2p candidate.
+    int ib, it;
+
+    if (cut2 == PID_BEAM) {
+      ib = 0;
+      it = 1;
+    } else if (cut2 == PID_TARG){
+      ib = 1;
+      it = 0;
+    } else
+      throw std::runtime_error("Invalid PID");
+
+    laser = laser_passed[ib];
+    np = 2;
+    tdpp = Ptd_passed[it] - Ptd_passed[ib];
+
+    time[0] = times_passed[ib];
+    time[1] = times_passed[it];
+
+    // ordering: 0 for beam, 1 for target (as for 110Sn)
+    quad[1] = Pquad_passed[it];
+    ring[1] = Pnf_passed[it];
+    sect[1] = Pnb_passed[it];
+    quad[0] = Pquad_passed[ib];
+    ring[0] = Pnf_passed[ib];
+    sect[0] = Pnb_passed[ib];
+
+    ep[0] = PEn_passed[ib];
+    ep[0] += dc.GetELoss(ep[ib], dc.GetCDDeadLayer(), 1, "BS");
+    ep[1] = PEn_passed[it];
+    ep[1] += dc.GetELoss(ep[it], dc.GetCDDeadLayer(), 1, "TS");
+    er[0] = ep[1];
+    er[1] = ep[0];
+
+    thp[0] = PTheta_passed[ib];
+    thp[1] = PTheta_passed[it];
+    thr[0] = thp[1];
+    thr[1] = thp[0];
+
+    php[0] = dc.GetPPhi(Pquad_passed[ib], Pnb_passed[ib], Psec_passed[ib]);
+    php[1] = dc.GetPPhi(Pquad_passed[it], Pnb_passed[it], Psec_passed[it]);
+    phr[0] = php[1];
+    phr[1] = php[0];
+
+    pid[0] = Ppid_passed[ib];
+    pid[1] = Ppid_passed[it];
+
+    ng = 1 + GCor_GEn.size();
+    td[0] = 0.5 * (Ptd_passed[0] + Ptd_passed[1]); // average
+    eg[0] = GEn;
+    thg[0] = GTh;
+    phg[0] = GPh;
+    clu[0] = GCluid;
+    cry[0] = GCid;
+    seg[0] = GSid;
+
+    for (int i = 0; i < ng - 1; i++) {
+      eg[i + 1] = GCor_GEn[i];
+      td[i + 1] = GCor_Gtd[i];
+      thg[i + 1] = GCor_GTh[i];
+      phg[i + 1] = GCor_GPh[i];
+      clu[i + 1] = GCor_GCluID[i];
+      cry[i + 1] = GCor_GCid[i];
+      seg[i + 1] = GCor_GSid[i];
+    }
+
+    // loop through gammas for angles and doppler correction
+    for (int i = 0; i < ng; i++) { 
+      abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
+      atg[i] = dc.GammaAng(thp[1], php[1], thg[i], phg[i]);
+      ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
+      etg[i] = eg[i] * dc.DC(ep[1], thp[1], php[1], thg[i], phg[i], dc.GetAt());
+    }
+
+    tree->Fill();
+
+  } else { // handle "broken" 2p event: either adjacent quads, time diff outside window, or identical pid
+    // break into two 1p events
+    for (int j = 0; j < np_passed; j++) {
+      laser = laser_passed[j];
+      np = 1;
+      //	 b2p = 0;
+      tdpp = 0.;
+      time[0] = times_passed[j];
+      ep[0] = PEn_passed[j];
+      quad[0] = Pquad_passed[j];
+      ring[0] = Pnf_passed[j];
+      sect[0] = Pnb_passed[j];
+      thp[0] = PTheta_passed[j];
+      php[0] = dc.GetPPhi(Pquad_passed[j], Pnb_passed[j], Psec_passed[j]);
+      phr[0] = dc.GetQPhi(Pquad_passed[j], Pnb_passed[j], Psec_passed[j]);
+      pid[0] = Ppid_passed[j];
+
+      ng = 1 + GCor_GEn.size();
+      td[0] = Ptd_passed[j]; // in particle
+      eg[0] = GEn;
+      thg[0] = GTh;
+      phg[0] = GPh;
+      clu[0] = GCluid;
+      cry[0] = GCid;
+      seg[0] = GSid;
+      for (int i = 0; i < ng - 1; i++) {
+        eg[i + 1] = GCor_GEn[i];
+        td[i + 1] = GCor_Gtd[i];
+        thg[i + 1] = GCor_GTh[i];
+        phg[i + 1] = GCor_GPh[i];
+        clu[i + 1] = GCor_GCluID[i];
+        cry[i + 1] = GCor_GCid[i];
+        seg[i + 1] = GCor_GSid[i];
+      }
+
+      if (pid[0] == PID_TARG) { // target detected, doppler corrections
+        // Target angles
+
+        // Use the two-body kinematics
+        if (dc.UseKin()) {
+
+          ep[0] = dc.GetTEnKinT(thp[0]);
+          thr[0] = dc.GetBThLabT(thp[0]);
+          er[0] = dc.GetBEnKinT(thp[0]);
+        } else {
+          // Or use the particle energy and angle
+          ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
+          er[0] = dc.GetBEn(PEn_passed[j], PTheta_passed[j]);
+          thr[0] = dc.GetBTh(PTheta_passed[j]);
+        }
+
+        for (int i = 0; i < ng; i++) {
+          // loop through gammas for angles and doppler correction
+          atg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
+          abg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
+          etg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAt());
+          ebg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAb());
+        }
+      } else if (pid[0] == PID_BEAM) { // pid[0]==1, Beam detected
+
+        // Use the two-body kinematics
+        if (dc.UseKin()) {
+          ep[0] = dc.GetBEnKinB(thp[0]);
+          thr[0] = dc.GetTThLabB(thp[0]);
+          er[0] = dc.GetTEnKinB(thp[0]);
+        } else {
+          // Or use the particle energy and angle
+          ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
+          er[0] = dc.GetTEn(PEn_passed[j], PTheta_passed[j]);
+          thr[0] = dc.GetTTh(PEn_passed[j], PTheta_passed[j]);
+        }
+
+        for (int i = 0; i < ng; i++) { 
+          // loop through gammas for angles and doppler correction
+          abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
+          atg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
+          ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
+          etg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAt());
+        }
+      } else {
+        throw std::runtime_error("Invalid PID during sorting, broken 2p events.");
+      }
+      tree->Fill();
+    }
+  }
+  // End of 2p events (both 'good' and 'broken').
+}
+
+void hists::doRoutineXP(float GEn, float GTh, float GPh, int GCluid, int GCid,
+                        int GSid, vector<float> GCor_GEn, vector<float> GCor_GTh,
+                        vector<float> GCor_GPh, vector<int> GCor_GCluID,
+                        vector<int> GCor_GCid, vector<int> GCor_GSid,
+                        vector<float> GCor_Gtd, int np_passed) {
+  vector<pair<int, int>> v2p;
+  vector<int> v2p_cut2;
+  vector<int> v1p;
+  v2p.clear();
+  v2p_cut2.clear();
+  v1p.clear();
+  int qpattern = 0;
+  vector<bool> unmatched;
+
+  for (int j = 0; j < np_passed; j++) {
+    unmatched.push_back(true);
+  }
+
+  for (int j = 0; j < np_passed; j++) {
+    for (int k = j + 1; k < np_passed; k++) {
+      if (j == k)
+        continue;
+      float time_diff = TMath::Abs(Ptd_passed[j] - Ptd_passed[k]); // 2p time difference in ticks of 25 ns
+      int quad_diff = TMath::Abs(Pquad_passed[j] - Pquad_passed[k]); // quadrant number difference
+
+      // returns 0 for target-beam passed, 1 for beam/target passed, -1 for small 2p angles
+      // (ring > 10 (innermost = 16) for both)
+      int cut2 = dc.Cut_2p(PEn_passed[j], Pnf_passed[j], Psec_passed[j],
+                           PEn_passed[k], Pnf_passed[k], Psec_passed[k]); 
+
+      if (isGood2p(quad_diff, time_diff, ppwin, cut2)) {
+        v2p.push_back(make_pair(j, k));
+        v2p_cut2.push_back(cut2);
+        unmatched[j] = false;
+        unmatched[k] = false;
+      }
+    }
+  }
+
+  for (int j = 0; j < np_passed; j++) {
+    if (unmatched[j])
+      v1p.push_back(j);
+  } // checked all Np events
+
+  // fill 1p events
+  for (int j = 0; j < v1p.size(); j++) {
+    laser = laser_passed[v1p[j]];
+    np = 1;
+    //	 b2p = 0;
+    tdpp = 0.;
+    time[0] = times_passed[v1p[j]];
+    ep[0] = PEn_passed[v1p[j]];
+    quad[0] = Pquad_passed[v1p[j]];
+    ring[0] = Pnf_passed[v1p[j]];
+    sect[0] = Pnb_passed[v1p[j]];
+    thp[0] = PTheta_passed[v1p[j]];
+    php[0] = dc.GetPPhi(Pquad_passed[v1p[j]], Pnb_passed[v1p[j]], Psec_passed[v1p[j]]);
+    phr[0] = dc.GetQPhi(Pquad_passed[v1p[j]], Pnb_passed[v1p[j]], Psec_passed[v1p[j]]);
+    pid[0] = Ppid_passed[v1p[j]];
+
+    ng = 1 + GCor_GEn.size();
+    td[0] = Ptd_passed[v1p[j]]; // in particle
+    eg[0] = GEn;
+    thg[0] = GTh;
+    phg[0] = GPh;
+    clu[0] = GCluid;
+    cry[0] = GCid;
+    seg[0] = GSid;
+
+    for (int i = 0; i < ng - 1; i++) {
+      eg[i + 1] = GCor_GEn[i];
+      td[i + 1] = GCor_Gtd[i];
+      thg[i + 1] = GCor_GTh[i];
+      phg[i + 1] = GCor_GPh[i];
+      clu[i + 1] = GCor_GCluID[i];
+      cry[i + 1] = GCor_GCid[i];
+      seg[i + 1] = GCor_GSid[i];
+    }
+
+    if (pid[0] == PID_TARG) { // target detected, doppler corrections
+      // Target angles
+
+      if (dc.UseKin()) { // Use the two-body kinematics
+        ep[0] = dc.GetTEnKinT(thp[0]);
+        thr[0] = dc.GetBThLabT(thp[0]);
+        er[0] = dc.GetBEnKinT(thp[0]);
+      } else { // Or use the particle energy and angle
+        ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
+        er[0] = dc.GetBEn(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
+        thr[0] = dc.GetBTh(PTheta_passed[Pnf_passed[v1p[j]]]);
+      }
+
+      for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction
+        atg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
+        abg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
+        etg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAt());
+        ebg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAb());
+      }
+
+    } else if (pid[0] == PID_BEAM) { // pid[0]==1, Beam detected
+
+      if (dc.UseKin()) { // Use the two-body kinematics
+        ep[0] = dc.GetBEnKinB(thp[0]);
+        thr[0] = dc.GetTThLabB(thp[0]);
+        er[0] = dc.GetTEnKinB(thp[0]);
+      } else {// Or use the particle energy and angle
+        ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
+        er[0] = dc.GetTEn(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
+        thr[0] = dc.GetTTh(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
+      }
+
+      for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction
+        abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
+        atg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
+        ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
+        etg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAt());
+      }
+
+    } else {
+      throw std::runtime_error("Invalid PID during sorting, 1p events.");
+    }
+    tree->Fill();
+  }
+
+  // fill matched 2p events
+  for (int j = 0; j < v2p.size(); j++) {
+    int ib, it;
+
+    if (v2p_cut2[j] == PID_BEAM) {
+      ib = v2p[j].first;
+      it = v2p[j].second;
+    } else if (v2p_cut2[j] == PID_TARG) {
+      ib = v2p[j].second;
+      it = v2p[j].first;
+    } else
+      throw std::runtime_error("Invalid PID");
+
+    laser = laser_passed[ib]; // take ib as default
+    np = 2;
+    tdpp = Ptd_passed[it] - Ptd_passed[ib];
+    time[0] = times_passed[ib];
+    time[1] = times_passed[it];
+
+    // ordering: 0 for beam, 1 for target (as for 110Sn)
+    quad[1] = Pquad_passed[it];
+    ring[1] = Pnf_passed[it];
+    sect[1] = Pnb_passed[it];
+    quad[0] = Pquad_passed[ib];
+    ring[0] = Pnf_passed[ib];
+    sect[0] = Pnb_passed[ib];
+
+    ep[0] = PEn_passed[ib];
+    ep[0] += dc.GetELoss(ep[ib], dc.GetCDDeadLayer(), 1, "BS");
+    ep[1] = PEn_passed[it];
+    ep[1] += dc.GetELoss(ep[it], dc.GetCDDeadLayer(), 1, "TS");
+    er[0] = ep[1];
+    er[1] = ep[0];
+    thp[0] = PTheta_passed[ib];
+    thp[1] = PTheta_passed[it];
+    thr[0] = thp[1];
+    thr[1] = thp[0];
+    php[0] = dc.GetPPhi(Pquad_passed[ib], Pnb_passed[ib], Psec_passed[ib]);
+    php[1] = dc.GetPPhi(Pquad_passed[it], Pnb_passed[it], Psec_passed[it]);
+    phr[0] = php[1];
+    phr[1] = php[0];
+    pid[0] = Ppid_passed[v2p[j].first];
+    pid[1] = Ppid_passed[v2p[j].second];
+
+    ng = 1 + GCor_GEn.size();
+    td[0] = 0.5 * (Ptd_passed[v2p[j].first] + Ptd_passed[v2p[j].second]); // average
+    eg[0] = GEn;
+    thg[0] = GTh;
+    phg[0] = GPh;
+    clu[0] = GCluid;
+    cry[0] = GCid;
+    seg[0] = GSid;
+
+    for (int i = 0; i < ng - 1; i++) {
+      eg[i + 1] = GCor_GEn[i];
+      td[i + 1] = GCor_Gtd[i];
+      thg[i + 1] = GCor_GTh[i];
+      phg[i + 1] = GCor_GPh[i];
+      clu[i + 1] = GCor_GCluID[i];
+      cry[i + 1] = GCor_GCid[i];
+      seg[i + 1] = GCor_GSid[i];
+    }
+
+    // Loop through gammas for angles and doppler correction.
+    for (int i = 0; i < ng; i++) {
+      abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
+      atg[i] = dc.GammaAng(thp[1], php[1], thg[i], phg[i]);
+      ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
+      etg[i] = eg[i] * dc.DC(ep[1], thp[1], php[1], thg[i], phg[i], dc.GetAt());
+    }
+
+    tree->Fill();
+  }
+}
+
 /**
  * @brief Fill the ROOT tree.
  * 
@@ -175,456 +638,20 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
   // passed vector is ordered in quadrants from 0 to 3
 
   run_nbr = cur_run_nbr;
-
-  if (np_passed == 1) { // 1-particle case, PID identified.
-    // Here [0] signifies the detected particle. Can be beam or target.
-    np = 1;
-    tdpp = 0.;
-    time[0] = times_passed[0];
-    laser = laser_passed[0];
-    ep[0] = PEn_passed[0];
-    quad[0] = Pquad_passed[0];
-    ring[0] = Pnf_passed[0];
-    sect[0] = Pnb_passed[0];
-    thp[0] = PTheta_passed[0];
-    php[0] = dc.GetPPhi(Pquad_passed[0], Pnb_passed[0], Psec_passed[0]);
-    phr[0] = dc.GetQPhi(Pquad_passed[0], Pnb_passed[0], Psec_passed[0]);
-    pid[0] = Ppid_passed[0];
-
-    ng = 1 + GCor_GEn.size();
-    td[0] = Ptd_passed[0];
-    eg[0] = GEn;
-    thg[0] = GTh;
-    phg[0] = GPh;
-    clu[0] = GCluid;
-    cry[0] = GCid;
-    seg[0] = GSid;
-    for (int i = 0; i < ng - 1; i++) {
-      eg[i + 1] = GCor_GEn[i];
-      td[i + 1] = GCor_Gtd[i];
-      thg[i + 1] = GCor_GTh[i];
-      phg[i + 1] = GCor_GPh[i];
-      clu[i + 1] = GCor_GCluID[i];
-      cry[i + 1] = GCor_GCid[i];
-      seg[i + 1] = GCor_GSid[i];
-    }
-
-    if (pid[0] == PID_TARG) { // Target detected, doppler corrections.
-      // Target angles
-
-      if (dc.UseKin()) { // Use the two-body kinematics. Not using this right?
-        ep[0] = dc.GetTEnKinT(thp[0]);
-        thr[0] = dc.GetBThLabT(thp[0]);
-        er[0] = dc.GetBEnKinT(thp[0]);
-      } else { // Use the particle energy and angle.
-        ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
-        er[0] = dc.GetBEn(PEn_passed[0], thp[0]);
-        thr[0] = dc.GetBTh(thp[0]);
-      }
-
-      for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction.
-        atg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
-        abg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
-        etg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAt());
-        ebg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAb());
-      }
-      // End of target detected.
-    } else if (pid[0] == PID_BEAM) {
-      if (dc.UseKin()) { // Use the two-body kinematics. Not using this right?
-        ep[0] = dc.GetBEnKinB(thp[0]);
-        thr[0] = dc.GetTThLabB(thp[0]);
-        er[0] = dc.GetTEnKinB(thp[0]);
-      } else { // Use the particle energy and angle.
-        ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
-        er[0] = dc.GetTEn(PEn_passed[0], thp[0]);
-        thr[0] = dc.GetTTh(Pnf_passed[0], thp[0]);
-      }
-
-      for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction 
-        abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
-        atg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
-        ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
-        etg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAt());
-      }
-      // End of beam detected.
-    } else
-      throw std::runtime_error("Invalid PID during FillTree");
-
-    tree->Fill();
-    // 1p case done.
+  if (np_passed == 1) {
+    // 1-particle case, PID identified.
+    doRoutine1P(GEn, GTh, GPh, GCluid, GCid, GSid, GCor_GEn, GCor_GTh,
+                GCor_GPh, GCor_GCluID, GCor_GCid, GCor_GSid, GCor_Gtd);
   } else if (np_passed == 2) {
-    // Start of 2-particle case. Check quadrant correlation (diff = 2) and in. Start checking if "good" 2p candidate.
-    // Here [0] signifies the beam-like particle, [1] target-like particle.
-    float time_diff = TMath::Abs(Ptd_passed[0] - Ptd_passed[1]); // 2p time difference in ticks of 25 ns
-    int quad_diff = TMath::Abs(Pquad_passed[0] - Pquad_passed[1]); // quadrant number difference
-
-    // returns 0 for beam/target passed, 1 for target/beam passed, 
-    // -1 for small 2p angles (ring > 10 (innermost = 16) for both)?
-    int cut2 = dc.Cut_2p(PEn_passed[0], Pnf_passed[0], PTheta_passed[0],
-                         PEn_passed[1], Pnf_passed[1], PTheta_passed[1]);  
-
-    if (isGood2p(quad_diff, time_diff, ppwin, cut2)) { 
-      // we have good 2p candidate.
-      int ib, it;
-
-      if (cut2 == PID_BEAM) {
-        ib = 0;
-        it = 1;
-      } else if (cut2 == PID_TARG){
-        ib = 1;
-        it = 0;
-      } else
-        throw std::runtime_error("Invalid PID");
-
-      laser = laser_passed[ib];
-      np = 2;
-      tdpp = Ptd_passed[it] - Ptd_passed[ib];
-
-      time[0] = times_passed[ib];
-      time[1] = times_passed[it];
-
-      // ordering: 0 for beam, 1 for target (as for 110Sn)
-      quad[1] = Pquad_passed[it];
-      ring[1] = Pnf_passed[it];
-      sect[1] = Pnb_passed[it];
-      quad[0] = Pquad_passed[ib];
-      ring[0] = Pnf_passed[ib];
-      sect[0] = Pnb_passed[ib];
-
-      ep[0] = PEn_passed[ib];
-      ep[0] += dc.GetELoss(ep[ib], dc.GetCDDeadLayer(), 1, "BS");
-      ep[1] = PEn_passed[it];
-      ep[1] += dc.GetELoss(ep[it], dc.GetCDDeadLayer(), 1, "TS");
-      er[0] = ep[1];
-      er[1] = ep[0];
-
-      thp[0] = PTheta_passed[ib];
-      thp[1] = PTheta_passed[it];
-      thr[0] = thp[1];
-      thr[1] = thp[0];
-
-      php[0] = dc.GetPPhi(Pquad_passed[ib], Pnb_passed[ib], Psec_passed[ib]);
-      php[1] = dc.GetPPhi(Pquad_passed[it], Pnb_passed[it], Psec_passed[it]);
-      phr[0] = php[1];
-      phr[1] = php[0];
-
-      pid[0] = Ppid_passed[ib];
-      pid[1] = Ppid_passed[it];
-
-      ng = 1 + GCor_GEn.size();
-      td[0] = 0.5 * (Ptd_passed[0] + Ptd_passed[1]); // average
-      eg[0] = GEn;
-      thg[0] = GTh;
-      phg[0] = GPh;
-      clu[0] = GCluid;
-      cry[0] = GCid;
-      seg[0] = GSid;
-
-      for (int i = 0; i < ng - 1; i++) {
-        eg[i + 1] = GCor_GEn[i];
-        td[i + 1] = GCor_Gtd[i];
-        thg[i + 1] = GCor_GTh[i];
-        phg[i + 1] = GCor_GPh[i];
-        clu[i + 1] = GCor_GCluID[i];
-        cry[i + 1] = GCor_GCid[i];
-        seg[i + 1] = GCor_GSid[i];
-      }
-
-      // loop through gammas for angles and doppler correction
-      for (int i = 0; i < ng; i++) { 
-        abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
-        atg[i] = dc.GammaAng(thp[1], php[1], thg[i], phg[i]);
-        ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
-        etg[i] = eg[i] * dc.DC(ep[1], thp[1], php[1], thg[i], phg[i], dc.GetAt());
-      }
-
-      tree->Fill();
-
-    } else { // handle "broken" 2p event: either adjacent quads, time diff outside window, or identical pid
-      // break into two 1p events
-      for (int j = 0; j < np_passed; j++) {
-        laser = laser_passed[j];
-        np = 1;
-        //	 b2p = 0;
-        tdpp = 0.;
-        time[0] = times_passed[j];
-        ep[0] = PEn_passed[j];
-        quad[0] = Pquad_passed[j];
-        ring[0] = Pnf_passed[j];
-        sect[0] = Pnb_passed[j];
-        thp[0] = PTheta_passed[j];
-        php[0] = dc.GetPPhi(Pquad_passed[j], Pnb_passed[j], Psec_passed[j]);
-        phr[0] = dc.GetQPhi(Pquad_passed[j], Pnb_passed[j], Psec_passed[j]);
-        pid[0] = Ppid_passed[j];
-
-        ng = 1 + GCor_GEn.size();
-        td[0] = Ptd_passed[j]; // in particle
-        eg[0] = GEn;
-        thg[0] = GTh;
-        phg[0] = GPh;
-        clu[0] = GCluid;
-        cry[0] = GCid;
-        seg[0] = GSid;
-        for (int i = 0; i < ng - 1; i++) {
-          eg[i + 1] = GCor_GEn[i];
-          td[i + 1] = GCor_Gtd[i];
-          thg[i + 1] = GCor_GTh[i];
-          phg[i + 1] = GCor_GPh[i];
-          clu[i + 1] = GCor_GCluID[i];
-          cry[i + 1] = GCor_GCid[i];
-          seg[i + 1] = GCor_GSid[i];
-        }
-
-        if (pid[0] == PID_TARG) { // target detected, doppler corrections
-          // Target angles
-
-          // Use the two-body kinematics
-          if (dc.UseKin()) {
-
-            ep[0] = dc.GetTEnKinT(thp[0]);
-            thr[0] = dc.GetBThLabT(thp[0]);
-            er[0] = dc.GetBEnKinT(thp[0]);
-          }
-
-          // Or use the particle energy and angle
-          else {
-            ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
-            er[0] = dc.GetBEn(PEn_passed[j], PTheta_passed[j]);
-            thr[0] = dc.GetBTh(PTheta_passed[j]);
-          }
-          for (int i = 0; i < ng;
-               i++) { // loop through gammas for angles and doppler correction
-            atg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
-            abg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
-            etg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAt());
-            ebg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAb());
-          }
-
-        } else if (pid[0] == PID_BEAM) { // pid[0]==1, Beam detected
-
-          //   // Use the two-body kinematics
-          if (dc.UseKin()) {
-
-            ep[0] = dc.GetBEnKinB(thp[0]);
-            thr[0] = dc.GetTThLabB(thp[0]);
-            er[0] = dc.GetTEnKinB(thp[0]);
-
-          }
-          //   // Or use the particle energy and angle
-          else {
-            ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
-            er[0] = dc.GetTEn(PEn_passed[j], PTheta_passed[j]);
-            thr[0] = dc.GetTTh(PEn_passed[j], PTheta_passed[j]);
-          }
-          for (int i = 0; i < ng;
-               i++) { // loop through gammas for angles and doppler correction
-            abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
-            atg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
-            ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
-            etg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAt());
-          }
-        } else {
-          throw std::runtime_error("Invalid PID during sorting, broken 2p events.");
-        }
-        tree->Fill();
-      }
-    }
-
-  // End of 2p events (both 'good' and 'broken').
-  } else { // 3-4p events, loop through for 2p correlations and sort uncorrelated events as 1p.
-    vector<pair<int, int>> v2p;
-    vector<int> v2p_cut2;
-    vector<int> v1p;
-    v2p.clear();
-    v2p_cut2.clear();
-    v1p.clear();
-    int qpattern = 0;
-    vector<bool> unmatched;
-
-    for (int j = 0; j < np_passed; j++) {
-      unmatched.push_back(true);
-    }
-
-    for (int j = 0; j < np_passed; j++) {
-      for (int k = j + 1; k < np_passed; k++) {
-        if (j == k)
-          continue;
-        float time_diff = TMath::Abs(Ptd_passed[j] - Ptd_passed[k]); // 2p time difference in ticks of 25 ns
-        int quad_diff = TMath::Abs(Pquad_passed[j] - Pquad_passed[k]); // quadrant number difference
-
-        // returns 0 for target-beam passed, 1 for beam/target passed, -1 for small 2p angles
-        // (ring > 10 (innermost = 16) for both)
-        int cut2 = dc.Cut_2p(PEn_passed[j], Pnf_passed[j], Psec_passed[j],
-                             PEn_passed[k], Pnf_passed[k], Psec_passed[k]); 
-
-        if (isGood2p(quad_diff, time_diff, ppwin, cut2)) {
-          v2p.push_back(make_pair(j, k));
-          v2p_cut2.push_back(cut2);
-          unmatched[j] = false;
-          unmatched[k] = false;
-        }
-      }
-    }
-
-    for (int j = 0; j < np_passed; j++) {
-      if (unmatched[j])
-        v1p.push_back(j);
-    } // checked all Np events
-
-    // fill 1p events
-    for (int j = 0; j < v1p.size(); j++) {
-      laser = laser_passed[v1p[j]];
-      np = 1;
-      //	 b2p = 0;
-      tdpp = 0.;
-      time[0] = times_passed[v1p[j]];
-      ep[0] = PEn_passed[v1p[j]];
-      quad[0] = Pquad_passed[v1p[j]];
-      ring[0] = Pnf_passed[v1p[j]];
-      sect[0] = Pnb_passed[v1p[j]];
-      thp[0] = PTheta_passed[v1p[j]];
-      php[0] = dc.GetPPhi(Pquad_passed[v1p[j]], Pnb_passed[v1p[j]], Psec_passed[v1p[j]]);
-      phr[0] = dc.GetQPhi(Pquad_passed[v1p[j]], Pnb_passed[v1p[j]], Psec_passed[v1p[j]]);
-      pid[0] = Ppid_passed[v1p[j]];
-
-      ng = 1 + GCor_GEn.size();
-      td[0] = Ptd_passed[v1p[j]]; // in particle
-      eg[0] = GEn;
-      thg[0] = GTh;
-      phg[0] = GPh;
-      clu[0] = GCluid;
-      cry[0] = GCid;
-      seg[0] = GSid;
-
-      for (int i = 0; i < ng - 1; i++) {
-        eg[i + 1] = GCor_GEn[i];
-        td[i + 1] = GCor_Gtd[i];
-        thg[i + 1] = GCor_GTh[i];
-        phg[i + 1] = GCor_GPh[i];
-        clu[i + 1] = GCor_GCluID[i];
-        cry[i + 1] = GCor_GCid[i];
-        seg[i + 1] = GCor_GSid[i];
-      }
-
-      if (pid[0] == PID_TARG) { // target detected, doppler corrections
-        // Target angles
-
-        if (dc.UseKin()) { // Use the two-body kinematics
-          ep[0] = dc.GetTEnKinT(thp[0]);
-          thr[0] = dc.GetBThLabT(thp[0]);
-          er[0] = dc.GetBEnKinT(thp[0]);
-        } else { // Or use the particle energy and angle
-          ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
-          er[0] = dc.GetBEn(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
-          thr[0] = dc.GetBTh(PTheta_passed[Pnf_passed[v1p[j]]]);
-        }
-
-        for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction
-          atg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
-          abg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
-          etg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAt());
-          ebg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAb());
-        }
-
-      } else if (pid[0] == PID_BEAM) { // pid[0]==1, Beam detected
-
-        if (dc.UseKin()) { // Use the two-body kinematics
-          ep[0] = dc.GetBEnKinB(thp[0]);
-          thr[0] = dc.GetTThLabB(thp[0]);
-          er[0] = dc.GetTEnKinB(thp[0]);
-        } else {// Or use the particle energy and angle
-          ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
-          er[0] = dc.GetTEn(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
-          thr[0] = dc.GetTTh(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
-        }
-
-        for (int i = 0; i < ng; i++) { // loop through gammas for angles and doppler correction
-          abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
-          atg[i] = dc.GammaAng(thr[0], phr[0], thg[i], phg[i]);
-          ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
-          etg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAt());
-        }
-
-      } else {
-        throw std::runtime_error("Invalid PID during sorting, 1p events.");
-      }
-      tree->Fill();
-    }
-
-    // fill matched 2p events
-    for (int j = 0; j < v2p.size(); j++) {
-      int ib, it;
-
-      if (v2p_cut2[j] == PID_BEAM) {
-        ib = v2p[j].first;
-        it = v2p[j].second;
-      } else if (v2p_cut2[j] == PID_TARG) {
-        ib = v2p[j].second;
-        it = v2p[j].first;
-      } else
-        throw std::runtime_error("Invalid PID");
-
-      laser = laser_passed[ib]; // take ib as default
-      np = 2;
-      tdpp = Ptd_passed[it] - Ptd_passed[ib];
-      time[0] = times_passed[ib];
-      time[1] = times_passed[it];
-
-      // ordering: 0 for beam, 1 for target (as for 110Sn)
-      quad[1] = Pquad_passed[it];
-      ring[1] = Pnf_passed[it];
-      sect[1] = Pnb_passed[it];
-      quad[0] = Pquad_passed[ib];
-      ring[0] = Pnf_passed[ib];
-      sect[0] = Pnb_passed[ib];
-
-      ep[0] = PEn_passed[ib];
-      ep[0] += dc.GetELoss(ep[ib], dc.GetCDDeadLayer(), 1, "BS");
-      ep[1] = PEn_passed[it];
-      ep[1] += dc.GetELoss(ep[it], dc.GetCDDeadLayer(), 1, "TS");
-      er[0] = ep[1];
-      er[1] = ep[0];
-      thp[0] = PTheta_passed[ib];
-      thp[1] = PTheta_passed[it];
-      thr[0] = thp[1];
-      thr[1] = thp[0];
-      php[0] = dc.GetPPhi(Pquad_passed[ib], Pnb_passed[ib], Psec_passed[ib]);
-      php[1] = dc.GetPPhi(Pquad_passed[it], Pnb_passed[it], Psec_passed[it]);
-      phr[0] = php[1];
-      phr[1] = php[0];
-      pid[0] = Ppid_passed[v2p[j].first];
-      pid[1] = Ppid_passed[v2p[j].second];
-
-      ng = 1 + GCor_GEn.size();
-      td[0] = 0.5 * (Ptd_passed[v2p[j].first] + Ptd_passed[v2p[j].second]); // average
-      eg[0] = GEn;
-      thg[0] = GTh;
-      phg[0] = GPh;
-      clu[0] = GCluid;
-      cry[0] = GCid;
-      seg[0] = GSid;
-
-      for (int i = 0; i < ng - 1; i++) {
-        eg[i + 1] = GCor_GEn[i];
-        td[i + 1] = GCor_Gtd[i];
-        thg[i + 1] = GCor_GTh[i];
-        phg[i + 1] = GCor_GPh[i];
-        clu[i + 1] = GCor_GCluID[i];
-        cry[i + 1] = GCor_GCid[i];
-        seg[i + 1] = GCor_GSid[i];
-      }
-
-      // Loop through gammas for angles and doppler correction.
-      for (int i = 0; i < ng; i++) {
-        abg[i] = dc.GammaAng(thp[0], php[0], thg[i], phg[i]);
-        atg[i] = dc.GammaAng(thp[1], php[1], thg[i], phg[i]);
-        ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
-        etg[i] = eg[i] * dc.DC(ep[1], thp[1], php[1], thg[i], phg[i], dc.GetAt());
-      }
-
-      tree->Fill();
-    }
-  } // End of 3-4p events.
+    // 2-particle case.
+    doRoutine2P(GEn, GTh, GPh, GCluid, GCid, GSid, GCor_GEn, GCor_GTh,
+                GCor_GPh, GCor_GCluID, GCor_GCid, GCor_GSid, GCor_Gtd);
+  } else {
+    // 3-4p events, loop through for 2p correlations and sort uncorrelated events as 1p.
+    doRoutineXP(GEn, GTh, GPh, GCluid, GCid, GSid, GCor_GEn, GCor_GTh,
+                GCor_GPh, GCor_GCluID, GCor_GCid, GCor_GSid, GCor_Gtd,
+                np_passed);
+  }
 } // End of FillTree
 
 #endif
