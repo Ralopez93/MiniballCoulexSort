@@ -76,9 +76,6 @@ public:
 	int maxrecoil;
 	int minrecoil;
 
-	// Array of cd angles for histogram bins
-	double cd_angles[65];
-
 	// Doppler instance
 	doppler dc;
 
