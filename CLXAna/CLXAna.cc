@@ -35,21 +35,6 @@ void PrintInput() {
   return;
 }
 
-void PrintAngles() {
-  cout << "Printing CD angles...\n" << endl;
-  cout << "Lower\tMid\tUpper" << endl;
-
-  for (int i = 0; i < 16; i++) {
-    double angle_mid = TMath::ATan((9.0 + (0.5 + i) * 2.0) / cddist);
-    double angle_lower = TMath::ATan((9.0 + (0.5 + i) * 2.0 - 1.0) / cddist);
-    double angle_upper = TMath::ATan((9.0 + (0.5 + i) * 2.0 + 1.0) / cddist);
-
-    cout << fixed << setprecision(4) << angle_lower << "\t" << angle_mid << "\t" << angle_upper << endl;
-  }
-
-  cout << "" << endl;
-}
-
 int main(int argc, char *argv[]) {
 
   CommandLineInterface *interface = new CommandLineInterface();
