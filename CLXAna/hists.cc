@@ -131,6 +131,7 @@ void hists::doRoutine1P(float GEn, float GTh, float GPh, int GCluid, int GCid,
   clu[0] = GCluid;
   cry[0] = GCid;
   seg[0] = GSid;
+
   for (int i = 0; i < ng - 1; i++) {
     eg[i + 1] = GCor_GEn[i];
     td[i + 1] = GCor_Gtd[i];
@@ -141,14 +142,15 @@ void hists::doRoutine1P(float GEn, float GTh, float GPh, int GCluid, int GCid,
     seg[i + 1] = GCor_GSid[i];
   }
 
-  if (pid[0] == PID_TARG) { // Target detected, doppler corrections.
-    // Target angles
-
-    if (dc.UseKin()) { // Use the two-body kinematics. Not using this right?
+  if (pid[0] == PID_TARG) {
+    // Target detected, doppler corrections.
+    if (dc.UseKin()) {
+      // Use the two-body kinematics. Not using this right?
       ep[0] = dc.GetTEnKinT(thp[0]);
       thr[0] = dc.GetBThLabT(thp[0]);
       er[0] = dc.GetBEnKinT(thp[0]);
-    } else { // Use the particle energy and angle.
+    } else {
+      // Use the particle energy and angle.
       ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
       er[0] = dc.GetBEn(PEn_passed[0], thp[0]);
       thr[0] = dc.GetBTh(thp[0]);
@@ -317,9 +319,8 @@ void hists::doRoutine2P(float GEn, float GTh, float GPh, int GCluid, int GCid,
       if (pid[0] == PID_TARG) { // target detected, doppler corrections
         // Target angles
 
-        // Use the two-body kinematics
         if (dc.UseKin()) {
-
+          // Use the two-body kinematics
           ep[0] = dc.GetTEnKinT(thp[0]);
           thr[0] = dc.GetBThLabT(thp[0]);
           er[0] = dc.GetBEnKinT(thp[0]);
@@ -339,8 +340,8 @@ void hists::doRoutine2P(float GEn, float GTh, float GPh, int GCluid, int GCid,
         }
       } else if (pid[0] == PID_BEAM) { // pid[0]==1, Beam detected
 
-        // Use the two-body kinematics
         if (dc.UseKin()) {
+          // Use the two-body kinematics
           ep[0] = dc.GetBEnKinB(thp[0]);
           thr[0] = dc.GetTThLabB(thp[0]);
           er[0] = dc.GetTEnKinB(thp[0]);
@@ -449,11 +450,13 @@ void hists::doRoutineXP(float GEn, float GTh, float GPh, int GCluid, int GCid,
     if (pid[0] == PID_TARG) { // target detected, doppler corrections
       // Target angles
 
-      if (dc.UseKin()) { // Use the two-body kinematics
+      if (dc.UseKin()) {
+        // Use the two-body kinematics.
         ep[0] = dc.GetTEnKinT(thp[0]);
         thr[0] = dc.GetBThLabT(thp[0]);
         er[0] = dc.GetBEnKinT(thp[0]);
-      } else { // Or use the particle energy and angle
+      } else {
+        // Or use the particle energy and angle.
         ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "TS");
         er[0] = dc.GetBEn(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
         thr[0] = dc.GetBTh(PTheta_passed[Pnf_passed[v1p[j]]]);
@@ -468,11 +471,13 @@ void hists::doRoutineXP(float GEn, float GTh, float GPh, int GCluid, int GCid,
 
     } else if (pid[0] == PID_BEAM) { // pid[0]==1, Beam detected
 
-      if (dc.UseKin()) { // Use the two-body kinematics
+      if (dc.UseKin()) {
+        // Use the two-body kinematics.
         ep[0] = dc.GetBEnKinB(thp[0]);
         thr[0] = dc.GetTThLabB(thp[0]);
         er[0] = dc.GetTEnKinB(thp[0]);
-      } else {// Or use the particle energy and angle
+      } else {
+        // Or use the particle energy and angle.
         ep[0] += dc.GetELoss(ep[0], dc.GetCDDeadLayer(), 1, "BS");
         er[0] = dc.GetTEn(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
         thr[0] = dc.GetTTh(PEn_passed[v1p[j]], PTheta_passed[Pnf_passed[v1p[j]]]);
@@ -484,7 +489,6 @@ void hists::doRoutineXP(float GEn, float GTh, float GPh, int GCluid, int GCid,
         ebg[i] = eg[i] * dc.DC(ep[0], thp[0], php[0], thg[i], phg[i], dc.GetAb());
         etg[i] = eg[i] * dc.DC(er[0], thr[0], phr[0], thg[i], phg[i], dc.GetAt());
       }
-
     } else {
       throw std::runtime_error("Invalid PID during sorting, 1p events.");
     }

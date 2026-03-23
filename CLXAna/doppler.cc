@@ -730,7 +730,6 @@ float doppler::GetBThLab(float CoM) {
   float Eprime = Ereac - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Ereac / Eprime);
 
-  // y = tan(theta_lab)
   float y = TMath::Sin(CoM) / (TMath::Cos(CoM) + tau * epsilon);
 
   float BTh = TMath::ATan(y);
@@ -949,11 +948,9 @@ float doppler::GetGPh(int cid, int sid) {
   return gamma_phi[cid / 3][cid % 3][sid];
 }
 
-float doppler::DC(float PEn, float PTh, float PPhi, float GTh, float GPhi,
-                  float A) {
+float doppler::DC(float PEn, float PTh, float PPhi, float GTh, float GPhi, float A) {
 
-  /// Returns Doppler correction factor for given particle and gamma
-  /// angular combination.
+  /// Returns Doppler correction factor for given particle and gamma angular combination.
   /// Velocity is calculated from detected particle energy, unless
   /// the 'usekin' flag is set to true, in which case it uses the velocity
   /// calculated from two-body kinematics
