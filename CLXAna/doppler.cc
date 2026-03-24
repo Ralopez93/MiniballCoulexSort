@@ -454,7 +454,12 @@ float doppler::GetPTh(float ring, int sector) {
     // So for example, r1 = r0 + 0.5 * 2 (basically adding half the pitch).
     double angle_lower = TMath::ATan((9.0 + (15.5 - ring) * 2.0 - 1.0) / cddist);
     double angle_upper = TMath::ATan((9.0 + (15.5 - ring) * 2.0 + 1.0) / cddist);
-    angle = gRandom->Uniform(angle_lower, angle_upper);
+
+    // Avoid using global seed. Just want to keep the Theta calculations consistent.
+    // Set to static to avoid resetting the RNG.
+    // Variable lifetime is now same as program and not function.
+    static TRandom3 rng(1);
+    angle = rng.Uniform(angle_lower, angle_upper);
   }
 
   // Forward CD - CREX
@@ -472,7 +477,6 @@ float doppler::GetPTh(float ring, int sector) {
   // Backwards CD
   if (sector == 3)
     angle = TMath::Pi() - TMath::ATan((9.0 + (ring + 0.5) * 2.0) / 64.0);
-
 
   return angle;
 }

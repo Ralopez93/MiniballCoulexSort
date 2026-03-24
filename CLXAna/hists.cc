@@ -593,7 +593,7 @@ void hists::doRoutineXP(float GEn, float GTh, float GPh, int GCluid, int GCid,
  * @param Psec Sector of C-REX (0 = FCD; 1 = FBarrel; 2 = BBarrel; 3 = BCD).
  * @param Pquad Detector (quadrant) number of particle
  * @param Ptd Particle-gamma time difference in 25 ns timestamps.
- * @param time Particle timestamp in 25 ns timestamps.
+ * @param Ptimes Particle times in 25 ns timestamps.
  * @param cur_run_nbr The current run number or 0 if not provided by user.
  */
 void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
