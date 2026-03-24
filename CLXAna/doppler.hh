@@ -57,7 +57,7 @@ public:
   void	ExpDefs( int Zb_, float Ab_, int Zt_, float At_, float Eb_, float Ex_, float thick_,
 		 float depth_, float cddist_, float cdoffset_, float deadlayer_,
 		 float contaminant_, float spededist_, TCutG *Bcut_, TCutG *Tcut_,
-		 string srimfile_, bool usekin_, string calfile_ );
+		 string srimfile_, bool usekin_, bool usekinloss_, string calfile_ );
   int Cut(float PEn, float ring, float PTheta );
   int Cut_2p(float PEn1, float ring1, float PTheta1,
 			       float PEn2, float ring2, float PTheta2 );
@@ -85,10 +85,12 @@ public:
   float	GetTThLabB( float BTh, bool kinflag = false );
   float	GetBEnKin( float CoM );
   float	GetBEnKinB( float BTh, bool kinflag = false );
-  float	GetBEnKinT( float TTh, bool kinflag = false );
+  float	GetBEnKinT( float BTh, float TTh, bool kinflag = false );
   float	GetTEnKin( float CoM );
-  float	GetTEnKinB( float BTh, bool kinflag = false );
+  float	GetTEnKinB( float TTh, float BTh, bool kinflag = false );
   float	GetTEnKinT( float TTh, bool kinflag = false );
+  float GetTKinLoss( float TEn, float TTh);
+  float GetBKinLoss( float BEn, float BTh);
   float	GammaAng( float PTh, float PPhi, float GTh, float GPhi );
   float GetGTh(int cid, int sid); 
   float GetGPh(int cid, int sid); 
@@ -105,7 +107,8 @@ public:
 	
   inline float u_mass() { return 931494.0038; };
   inline bool	UseKin() { return usekin; };
-	
+  inline bool	UseKinLoss() { return usekinloss; };
+
 private:
   static TRandom3	rand;
   TGraph *gSP[6];
@@ -126,6 +129,7 @@ private:
   TCutG	*Bcut, *Tcut;
   string  srimfile;
   bool	usekin;			///< flag to use two-body kinematics for velocity
+  bool	usekinloss;	///< flag to use energy loss with SRIM when using two-body kinematics for velocity
   string calfile; // re-load MB geometry parameters
   Calibration *Cal;
   MBGeometry mbg;

@@ -38,6 +38,7 @@ float		spededist = 23.6;	    ///< SPEDE to target distance in mm
 float		bg_frac = -1.0;		    ///< ratio of prompt and random background subtraction (negative)
 string  srim = "./srim";	    ///< directory containing the SRIM output files for Doppler correction
 bool		usekin = false;		    ///< Flag to use two-body kinematics for particle velocity
+bool		usekinloss = false;		///< Flag to use energy loss with SRIM when using two-body kinematics for velocity
 int     clu_tune = -1;        ///< Flag to choose cluster for angle tuning
 int     cur_run_nbr = 0;      ///< Tag data with current run number. 
 

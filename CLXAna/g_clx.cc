@@ -35,7 +35,7 @@ void g_clx::Loop(string outputfilename) {
   // Create doppler instance and set experimental parameters
   doppler dc;
   dc.ExpDefs(Zb, Ab, Zt, At, Eb, Ex, thick, depth, cddist, cdoffset, deadlayer,
-             contaminant, spededist, Bcut, Tcut, srim, usekin, calfile);
+             contaminant, spededist, Bcut, Tcut, srim, usekin, usekinloss, calfile);
   dc.mbAngles(clusters); // re-define MB angles
 
   if (clusters.size() != 8) {

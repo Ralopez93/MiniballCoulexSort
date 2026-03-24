@@ -106,6 +106,7 @@ private:
   vector<double> times_passed;
 	//ClassDef(hists,1);
 
+  void resetVar();
   bool isGood2p(int quad_diff, float time_diff, float ppwin, int cut2);
   void doRoutine1P(float GEn, float GTh, float GPh, int GCluid, int GCid,
                    int GSid, vector<float> GCor_GEn, vector<float> GCor_GTh,

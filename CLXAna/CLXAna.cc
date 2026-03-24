@@ -30,6 +30,9 @@ void PrintInput() {
   else
     cout << "Using detected particle energy for velocity calculation" << endl;
 
+  if (usekin && usekinloss)
+    cout << "Using SRIM to calculate energy loss in target." << endl;
+
   cout << "\nOutputfile = " << outputfilename << endl << endl;
 
   return;
@@ -58,7 +61,8 @@ int main(int argc, char *argv[]) {
   interface->Add("-spededist", "Relative distance of SPEDE and target (mm)", &spededist);
   interface->Add("-bg_frac", "Ratio of prompt and random for background subtraction", &bg_frac);
   interface->Add("-srim", "Directory containing the SRIM files", &srim);
-  interface->Add("-usekin", "Use two-body kinematics for particle velocity?", &usekin);
+  interface->Add("-usekin", "Use two-body kinematics for particle velocity.", &usekin);
+  interface->Add("-usekinloss", "Use energy loss with SRIM when using two-body kinematics for velocity.", &usekinloss);
   interface->Add("-cal", "Calibration file", &calfilename);
   interface->Add("-clutune", "Cluster switch for angletuning", &clu_tune);
   interface->Add("-cur_run_nbr", "Tag data with the given run number", &cur_run_nbr);
@@ -92,7 +96,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Initiate g_clx
-  g_clx x(chain);
+  g_clx clx(chain);
 
   // Get the cut file
   if (cutfilename.size() > 0) {
@@ -137,13 +141,13 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    x.Bcut = (TCutG *)fcut->Get(str_bcut.c_str());
-    x.Tcut = (TCutG *)fcut->Get(str_tcut.c_str());
+    clx.Bcut = (TCutG *)fcut->Get(str_bcut.c_str());
+    clx.Tcut = (TCutG *)fcut->Get(str_tcut.c_str());
 
   } else {
     // if not cut file given, make empty cuts
-    x.Bcut = new TCutG();
-    x.Tcut = new TCutG();
+    clx.Bcut = new TCutG();
+    clx.Tcut = new TCutG();
   }
 
   // Test if we're using a config file (we overwrite the values if so)
@@ -167,31 +171,33 @@ int main(int argc, char *argv[]) {
     bg_frac = config->GetValue("bg_frac", -1.0);
     srim = config->GetValue("srim", "./srim");
     usekin = config->GetValue("usekin", false);
+    usekinloss = config->GetValue("usekinloss", false);
   }
 
   // Parameters are already read from the command line if not overwritten by config file.
   if (Zb > 0 && Zt > 0 && Ab > 0 && At > 0 && Eb > 0 && Ex > 0 && thick > 0 && depth > 0 && cddist > 0) {
     // Setup the experimental parameters
     // x.SetExpDefs( Zb, Ab, Zt, At, Eb, Ex, thick, depth, cddist, cdoffset );
-    x.Zb = Zb;
-    x.Ab = Ab;
-    x.Zt = Zt;
-    x.At = At;
-    x.Eb = Eb;
-    x.Ex = Ex;
-    x.thick = thick;
-    x.depth = depth;
-    x.cddist = cddist;
-    x.cdoffset = cdoffset;
-    x.deadlayer = deadlayer;
-    x.contaminant = contaminant;
-    x.spededist = spededist;
-    x.bg_frac = bg_frac;
-    x.srim = srim;
-    x.usekin = usekin;
-    x.calfile = calfilename;
-    x.clu_tune = clu_tune;
-    x.cur_run_nbr = cur_run_nbr;
+    clx.Zb = Zb;
+    clx.Ab = Ab;
+    clx.Zt = Zt;
+    clx.At = At;
+    clx.Eb = Eb;
+    clx.Ex = Ex;
+    clx.thick = thick;
+    clx.depth = depth;
+    clx.cddist = cddist;
+    clx.cdoffset = cdoffset;
+    clx.deadlayer = deadlayer;
+    clx.contaminant = contaminant;
+    clx.spededist = spededist;
+    clx.bg_frac = bg_frac;
+    clx.srim = srim;
+    clx.usekin = usekin;
+    clx.usekinloss = usekinloss;
+    clx.calfile = calfilename;
+    clx.clu_tune = clu_tune;
+    clx.cur_run_nbr = cur_run_nbr;
     cout << "Input parameters:" << endl;
     PrintInput();
   } else {
@@ -205,7 +211,7 @@ int main(int argc, char *argv[]) {
 
   // Run sort
   cout << "Begin g_clx loop." << endl;
-  x.Loop(outputfilename);
+  clx.Loop(outputfilename);
 
   cout << "Finished." << endl;
   cout << "\a" << endl;

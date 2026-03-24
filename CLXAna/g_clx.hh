@@ -100,6 +100,7 @@ class g_clx : public TObject {
 	TCutG			*Tcut;			///< Graphical cut for target-like particles
 	string			srim;			///< Directory containing the srim files
 	bool			usekin;			///< Flag to use two-body kinematics for particle velocity
+	bool			usekinloss;			///< Flag to use energy loss with SRIM when using two-body kinematics for velocity
   string                  calfile;
     int             clu_tune;             // cluster for angle tuning (1 per process)
 

@@ -15,7 +15,7 @@ void doppler::ExpDefs(int Zb_, float Ab_, int Zt_, float At_, float Eb_,
                       float Ex_, float thick_, float depth_, float cddist_,
                       float cdoffset_, float deadlayer_, float contaminant_,
                       float spededist_, TCutG *Bcut_, TCutG *Tcut_,
-                      string srimfile_, bool usekin_, string calfile_) {
+                      string srimfile_, bool usekin_, bool usekinloss_, string calfile_) {
 
   /// Initialisation of experimental definitions from command line of config
   /// file
@@ -36,6 +36,7 @@ void doppler::ExpDefs(int Zb_, float Ab_, int Zt_, float At_, float Eb_,
   Tcut = Tcut_;
   srimfile = srimfile_;
   usekin = usekin_;
+  usekinloss = usekinloss_;
   calfile = calfile_;
 
   return;
@@ -478,6 +479,9 @@ float doppler::GetPTh(float ring, int sector) {
   if (sector == 3)
     angle = TMath::Pi() - TMath::ATan((9.0 + (ring + 0.5) * 2.0) / 64.0);
 
+  if (sector != 4)
+    std::cout << "Sector: " << sector << ", ring: " << ring << std::endl;
+
   return angle;
 }
 
@@ -674,14 +678,16 @@ float doppler::GetELoss(float Ei, float dist, int opt, string combo) {
 
   /** Returns the energy loss at a given initial energy and distance travelled in the target,
    *  the contaminant layer or Si dead layer Ei is the initial energy in keV,
-   *  return value is also in keV dist is the distance travelled in the target in mg/cm2
-   *  opt = 0 calculates normal energy loss as particle moves through target
-   *  (default) opt = 1 calculates energy increase, i.e. tracing particle back
+   *  return value is also in keV dist is the distance travelled in the target in mg/cm2.
+   * 
+   *  opt = 0 calculates normal energy loss as particle moves through target (default)
+   *  opt = 1 calculates energy increase, i.e. tracing particle back
    *  to reaction point combo = "BT", "TT", "BC", "TC", "BS" or "TS" for the
    *  beam in target, target in target, beam in contaminant, target in
-   *  contaminant, beam in Si or target in Si, respectively. Stopping power data
-   *  is taken from SRIM the output files must be placed in the './srim/' folder
-   *  with the format 62Fe_109Ag.txt, 62Fe_Si.txt, 109Ag_109Ag.txt or
+   *  contaminant, beam in Si or target in Si, respectively.
+   * 
+   *  Stopping power data  is taken from SRIM the output files must be placed in the
+   *  './srim/' folder with the format 62Fe_109Ag.txt, 62Fe_Si.txt, 109Ag_109Ag.txt or
    *  109Ag_Si.txt, for combo = "BT", "TT", "BS" and "TS", repsectively. The
    *  srim file should be in units of MeV/(mg/cm^2)
    */
@@ -711,17 +717,44 @@ float doppler::GetELoss(float Ei, float dist, int opt, string combo) {
 
     if (opt == 1)
       E += 1000. * dedx * dx;
-
     else
       E -= 1000. * dedx * dx;
   }
-
-  // if( opt == 0 && combo == "BT" ) cout << "Eloss = " << Ei - E << endl;
 
   if (opt == 0)
     return Ei - E;
   else
     return E - Ei;
+}
+
+/**
+ * @brief Calculate the energy loss for the beam in target.
+ * Should only be used together with Catkin 2B procedure (usekin)..
+ * 
+ * @param BEn Beam energy.
+ * @param BTh Beam scattering angle
+ * 
+ * @return Calcualted energy loss for beam in target.
+ */
+float doppler::GetBKinLoss(float BEn, float BTh) {
+  float dist = TMath::Abs((thick - depth) / TMath::Cos(BTh));
+
+ return GetELoss(BEn, dist, 0, "BT");
+}
+
+/**
+ * @brief Calculate the energy loss for the target in target.
+ * Should only be used together with Catkin 2B procedure (usekin).
+ * 
+ * @param TEn Target energy.
+ * @param TTh Target scattering angle.
+ * 
+ * @return Calcualted energy loss for beam in target.
+ */
+float doppler::GetTKinLoss(float TEn, float TTh) {
+  float dist = TMath::Abs((thick - depth) / TMath::Cos(TTh));
+
+ return GetELoss(TEn, dist, 0, "TT");
 }
 
 float doppler::GetBThLab(float CoM) {
@@ -764,29 +797,41 @@ float doppler::GetTThLab(float CoM) {
   return TTh;
 }
 
+/**
+ * @brief Calculate the beam angle in the lab from the target lab angle
+ * 
+ * @param TTh theta angle of the target in the laboratory frame.
+ * @param kinflag kinematics flag such that true is the backwards solution
+ *                (i.e. CoM > 90 deg)
+ * @return Beam angle from target angle.
+ */
 float doppler::GetBThLabT(float TTh, bool kinflag) {
-
-  /// Calculate the beam angle in the lab from the target lab angle
-  /// @param TTh theta angle of the target in the laboratory frame
-
   return GetBThLab(GetTThCoM(TTh, kinflag));
 }
 
+/**
+ * @brief Calculate the target angle in the lab from the beam lab angle
+ * 
+ * @param TTh theta angle of the target in the laboratory frame.
+ * @param kinflag kinematics flag such that true is the backwards solution
+ *                (i.e. CoM > 90 deg)
+ * @return Beam angle from target angle.
+ */
 float doppler::GetTThLabB(float BTh, bool kinflag) {
-
-  /// Calculate the target angle in the lab from the beam lab angle
-  /// @param BTh theta angle of the beam in the laboratory frame
-
   return GetTThLab(GetBThCoM(BTh, kinflag));
 }
 
+/**
+ * @brief Calculates CoM scattering angle from the
+ * beam laboratory angle in radians.
+ * 
+ * @param BTh theta angle of the beam in laboratory frame
+ * @param kinflag kinematics flag such that true is the backwards solution
+ *                (i.e. CoM > 90 deg)
+ *
+ * @return The Center-of-Mass scattering angle. 
+ */
 float doppler::GetBThCoM(float BTh, bool kinflag) {
-
-  /// Calculates CoM scattering angle from the beam laboratory angle in radians
-  /// @param BTh theta angle of the beam in laboratory frame
-  /// @param kinflag kinematics flag such that true is the backwards solution
-  /// (i.e. CoM > 90 deg)
-
   float tau = Ab / At;
   float Eprime = Ereac - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Ereac / Eprime);
@@ -818,14 +863,17 @@ float doppler::GetBThCoM(float BTh, bool kinflag) {
   return CoM;
 }
 
+/**
+ * @brief Calculates CoM scattering angle from the
+ * target laboratory angle in radians.
+ * 
+ * @param TTh theta angle of the target in laboratory frame
+ * @param kinflag kinematics flag such that true is the backwards solution
+ *                (i.e. CoM > 90 deg)
+ *
+ * @return The Center-of-Mass scattering angle. 
+ */
 float doppler::GetTThCoM(float TTh, bool kinflag) {
-
-  /// Calculates CoM scattering angle from the target laboratory angle in
-  /// radians
-  /// @param TTh theta angle of the target in laboratory frame
-  /// @param kinflag kinematics flag such that true is the backwards solution
-  /// (i.e. CoM > 90 deg)
-
   float tau = Ab / At;
   float Eprime = Ereac - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Ereac / Eprime);
@@ -851,30 +899,35 @@ float doppler::GetTThCoM(float TTh, bool kinflag) {
   return CoM;
 }
 
+/**
+ * @brief Calculate the beam energy for a given centre of mass angle
+ * using two-body kinematics calculations only.
+ * 
+ * @param CoM theta angle of the beam/particle in the centre of mass frame.
+ * 
+ * @return The beam energy.
+ */
 float doppler::GetBEnKin(float CoM) {
-
-  /// Calculate the beam energy for a given centre of mass angle
-  /// using two-body kinematics calculations only
-  /// @param CoM theta angle of the beam in the centre of mass frame
-
   float tau = Ab / At;
   float Eprime = Ereac - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Ereac / Eprime);
 
   float Eproj = TMath::Power(At / (At + Ab), 2.0);
-  Eproj *=
-      1. + tau * tau * epsilon * epsilon + 2. * tau * epsilon * TMath::Cos(CoM);
+  Eproj *= 1. + tau * tau * epsilon * epsilon + 2. * tau * epsilon * TMath::Cos(CoM);
   Eproj *= Eprime;
 
   return Eproj;
 }
 
+/**
+ * @brief Calculate the target energy for a given centre of mass angle
+ * using two-body kinematics calculations only.
+ * 
+ * @param CoM theta angle of the beam/particle in the centre of mass frame.
+ * 
+ * @return The target energy.
+ */
 float doppler::GetTEnKin(float CoM) {
-
-  /// Calculate the target energy for a given centre of mass angle
-  /// using two-body kinematics calculations only
-  /// @param CoM theta angle of the beam in the centre of mass frame
-
   float tau = Ab / At;
   float Eprime = Ereac - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Ereac / Eprime);
@@ -886,44 +939,119 @@ float doppler::GetTEnKin(float CoM) {
   return Etarg;
 }
 
+/**
+ * @brief Calculate beam energy for a given beam scattering angle
+ * using two-body kinematics calculations only.
+ * 
+ * This is used when beam was detected.
+ * 
+ * @param BTh theta angle of the beam in laboratory frame (detected).
+ * @param kinflag kinematics flag such that true is the backwards solution (i.e. CoM > 90 deg).
+ * 
+ * @return The calculated beam energy. 
+ */
 float doppler::GetBEnKinB(float BTh, bool kinflag) {
+  float BEn = GetBEnKin(GetBThCoM(BTh, kinflag));
 
-  /// Calculate the beam energy for a given beam
-  /// using two-body kinematics calculations only
-  /// @param BTh theta angle of the beam in laboratory frame
-  /// @param kinflag kinematics flag such that true is the backwards solution
-  /// (i.e. CoM > 90 deg)
+  if (usekinloss) {
+    BEn -= GetBKinLoss(BEn, BTh);
+  }
 
-  return GetBEnKin(GetBThCoM(BTh, kinflag));
+  // // Use same logic as for the other functions.
+  // if (BTh < 0.501 * TMath::Pi() && BTh > 0.499 * TMath::Pi())
+  //   Eb = 0.1;
+
+  // if (Eb < 0.1)
+  //   Eb = 0.1;
+
+  return BEn;
 }
 
-float doppler::GetBEnKinT(float TTh, bool kinflag) {
+/**
+ * @brief Calculate beam energy for a given target scattering angle
+ * using two-body kinematics calculations only.
+ * 
+ * This is used when target was detected, and not beam.
+ * 
+ * @param TTh theta angle of the target in laboratory frame (detected).
+ * @param BTh theta angle of the beam in laboratory frame (calculated).
+ * @param kinflag kinematics flag such that true is the backwards solution (i.e. CoM > 90 deg).
+ * 
+ * @return The calculated beam energy. 
+ */
+float doppler::GetBEnKinT(float TTh, float BTh, bool kinflag) {
+  float BEn = GetTEnKin(GetTThCoM(TTh, kinflag));
 
-  /// Calculate the beam energy for a given target
-  /// using two-body kinematics calculations only
-  /// @param TTh theta angle of the target in laboratory frame
+  if (usekinloss) {
+    BEn -= GetTKinLoss(BEn, BTh);
+  }
 
-  return GetBEnKin(GetTThCoM(TTh, kinflag));
+  // // Use same logic as for the other functions.
+  // if (BTh < 0.501 * TMath::Pi() && BTh > 0.499 * TMath::Pi())
+  //   Eb = 0.1;
+
+  // if (Eb < 0.1)
+  //   Eb = 0.1;
+
+  return BEn;
 }
 
-float doppler::GetTEnKinB(float BTh, bool kinflag) {
+/**
+ * @brief Calculate target energy for a given beam scattering angle
+ * using two-body kinematics calculations only.
+ * 
+ * This is used when beam was detected, and not target.
+ * 
+ * @param BTh theta angle of the beam in laboratory frame (detected).
+ * @param TTh theta angle of the target in laboratory frame (calculated).
+ * @param kinflag kinematics flag such that true is the backwards solution (i.e. CoM > 90 deg).
+ * 
+ * @return The calculated beam energy using target angle.
+ */
+float doppler::GetTEnKinB(float BTh, float TTh, bool kinflag) {
 
-  /// Calculate the target energy for a given beam
-  /// using two-body kinematics calculations only
-  /// @param BTh theta angle of the beam in laboratory frame
-  /// @param kinflag kinematics flag such that true is the backwards solution
-  /// (i.e. CoM > 90 deg)
+  float TEn = GetTEnKin(GetBThCoM(BTh, kinflag));
 
-  return GetTEnKin(GetBThCoM(BTh, kinflag));
+  if (usekinloss) {
+    TEn -= GetTKinLoss(TEn, TTh);
+  }
+
+  // // Use same logic as for the other functions.
+  // if (TTh < 0.501 * TMath::Pi() && TTh > 0.499 * TMath::Pi())
+  //   TEn = 0.1;
+
+  // if (Eb < 0.1)
+  //   Eb = 0.1;
+
+  return TEn;
 }
 
+/**
+ * @brief Calculate target energy for a given target scattering angle
+ * using two-body kinematics calculations only.
+ * 
+ * This is used when target was detected.
+ * 
+ * @param TTh theta angle of the target in laboratory frame (detected).
+ * @param kinflag kinematics flag such that true is the backwards solution (i.e. CoM > 90 deg).
+ * 
+ * @return The calculated target energy using target angle. 
+ */
 float doppler::GetTEnKinT(float TTh, bool kinflag) {
+  float TEn = GetBEnKin(GetTThCoM(TTh, kinflag));
 
-  /// Calculate the target energy for a given target
-  /// using two-body kinematics calculations only
-  /// @param TTh theta angle of the target in laboratory frame
+  if (usekinloss) {
+    TEn -= GetBKinLoss(TEn, TTh);
+  }
 
-  return GetTEnKin(GetTThCoM(TTh, kinflag));
+  // // Use same logic as for the other functions.
+  // if (TTh < 0.501 * TMath::Pi() && TTh > 0.499 * TMath::Pi())
+  //   TEn = 0.1;
+
+  // if (TEn < 0.1)
+  //   TEn = 0.1;
+
+  return TEn;
 }
 
 float doppler::GammaAng(float PTh, float PPhi, float GTh, float GPhi) {
@@ -936,29 +1064,61 @@ float doppler::GammaAng(float PTh, float PPhi, float GTh, float GPhi) {
   return TMath::ACos(costheta);
 }
 
+/**
+ * @brief Calculates the beta factor after third order Taylor expansion.
+ * 
+ * @param Ek Kinetic energy.
+ * @param m Mass.
+ * 
+ * @return Relativistic beta.
+ */
 float doppler::Beta(float Ek, float m) {
-
-  /// Returns beta after Taylor expansion to third order
-
   double beta2 = -0.5 * m + TMath::Sqrt(m * (0.25 * m + 1.5 * Ek));
   beta2 /= 0.75 * m;
 
   return TMath::Sqrt(beta2);
 }
+
+/**
+ * @brief Get gamma theta angle in radians.
+ * 
+ * @param cid Crystal ID.
+ * @param sid Segment ID.
+ * 
+ * @return Gamma theta angle. 
+ */
 float doppler::GetGTh(int cid, int sid) {
   return gamma_theta[cid / 3][cid % 3][sid];
 }
+
+/**
+ * @brief Get gamma phi angle in radians.
+ * 
+ * @param cid Crystal ID.
+ * @param sid Segment ID.
+ * 
+ * @return Gamma phi angle. 
+ */
 float doppler::GetGPh(int cid, int sid) {
   return gamma_phi[cid / 3][cid % 3][sid];
 }
 
+/**
+ * @brief Returns Doppler correction factor for given particle and gamma angular combination.
+ * Velocity is calculated from detected particle energy, unless
+ * the 'usekin' flag is set to true, in which case it uses the velocity
+ * calculated from two-body kinematics
+ * 
+ * @param PEn Particle energy.
+ * @param PTh Particle theta angle.
+ * @param PPhi Particle phi angle.
+ * @param GTh Gamma theta angle.
+ * @param GPhi Gamma phi angle.
+ * @param A Atomic mass.
+ * 
+ * @return Doppler correction factor. 
+ */
 float doppler::DC(float PEn, float PTh, float PPhi, float GTh, float GPhi, float A) {
-
-  /// Returns Doppler correction factor for given particle and gamma angular combination.
-  /// Velocity is calculated from detected particle energy, unless
-  /// the 'usekin' flag is set to true, in which case it uses the velocity
-  /// calculated from two-body kinematics
-
   float beta = Beta(PEn, A * u_mass());
   float gamma = 1. / TMath::Sqrt(1. - beta * beta);
   float costheta = sin(PTh) * sin(GTh) * cos(PPhi - GPhi) + (cos(PTh) * cos(GTh));
