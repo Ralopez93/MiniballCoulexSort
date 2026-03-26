@@ -729,12 +729,14 @@ float doppler::GetTKinLoss(float TEn, float TTh) {
  return GetELoss(TEn, dist, 0, "TT");
 }
 
+/**
+ * @brief Calculate the beam angle in the lab from the centre of mass angle in radians.
+ * 
+ * @param CoM theta angle of the beam/target in the centre of mass frame.
+ * 
+ * @return The beam angle. 
+ */
 float doppler::GetBThLab(float CoM) {
-
-  /// Calculate the beam angle in the lab from the centre of mass angle
-  /// (radians)
-  /// @param CoM theta angle of the beam in the centre of mass frame
-
   float tau = Ab / At;
   float Eprime = Ereac - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Ereac / Eprime);
@@ -748,12 +750,14 @@ float doppler::GetBThLab(float CoM) {
   return BTh;
 }
 
+/**
+ * @brief Calculate the target angle in the lab from the centre of mass angle in radians.
+ * 
+ * @param CoM theta angle of the beam/target in the centre of mass frame.
+ * 
+ * @return The target angle. 
+ */
 float doppler::GetTThLab(float CoM) {
-
-  /// Calculate the target angle in the lab from the centre of mass angle
-  /// (radians)
-  /// @param CoM theta angle of the beam in the centre of mass frame
-
   float tau = Ab / At;
   float Eprime = Ereac - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Ereac / Eprime);
@@ -929,13 +933,6 @@ float doppler::GetBEnKinB(float BTh, bool kinflag) {
     BEn -= GetBKinLoss(BEn, BTh);
   }
 
-  // // Use same logic as for the other functions.
-  // if (BTh < 0.501 * TMath::Pi() && BTh > 0.499 * TMath::Pi())
-  //   Eb = 0.1;
-
-  // if (Eb < 0.1)
-  //   Eb = 0.1;
-
   return BEn;
 }
 
@@ -957,13 +954,6 @@ float doppler::GetBEnKinT(float TTh, float BTh, bool kinflag) {
   if (usekinloss) {
     BEn -= GetTKinLoss(BEn, BTh);
   }
-
-  // // Use same logic as for the other functions.
-  // if (BTh < 0.501 * TMath::Pi() && BTh > 0.499 * TMath::Pi())
-  //   Eb = 0.1;
-
-  // if (Eb < 0.1)
-  //   Eb = 0.1;
 
   return BEn;
 }
@@ -988,13 +978,6 @@ float doppler::GetTEnKinB(float BTh, float TTh, bool kinflag) {
     TEn -= GetTKinLoss(TEn, TTh);
   }
 
-  // // Use same logic as for the other functions.
-  // if (TTh < 0.501 * TMath::Pi() && TTh > 0.499 * TMath::Pi())
-  //   TEn = 0.1;
-
-  // if (Eb < 0.1)
-  //   Eb = 0.1;
-
   return TEn;
 }
 
@@ -1015,13 +998,6 @@ float doppler::GetTEnKinT(float TTh, bool kinflag) {
   if (usekinloss) {
     TEn -= GetBKinLoss(TEn, TTh);
   }
-
-  // // Use same logic as for the other functions.
-  // if (TTh < 0.501 * TMath::Pi() && TTh > 0.499 * TMath::Pi())
-  //   TEn = 0.1;
-
-  // if (TEn < 0.1)
-  //   TEn = 0.1;
 
   return TEn;
 }
