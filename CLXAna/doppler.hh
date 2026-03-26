@@ -61,7 +61,6 @@ public:
   int Cut(float PEn, float ring, float PTheta );
   int Cut_2p(float PEn1, float ring1, float PTheta1,
 			       float PEn2, float ring2, float PTheta2 );
-  bool	CutG_en2hit( float BEn, float TEn );
   int		GetZb();
   int		GetZt();
   float	GetAb();

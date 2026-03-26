@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
     srim = config->GetValue("srim", "./srim");
     usekin = config->GetValue("usekin", false);
     usekinloss = config->GetValue("usekinloss", false);
-    np_only = config->GetValue("np", 0);
+    np_only = config->GetValue("np_only", 0);
   }
 
   // Parameters are already read from the command line if not overwritten by config file.

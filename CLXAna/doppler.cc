@@ -351,39 +351,6 @@ int doppler::Cut_2p(float PEn1, float ring1, float PTheta1,
   return identity;
 }
 
-bool doppler::CutG_en2hit(float BEn, float TEn) {
-
-  /// Returns true or false if the 2d graphical cut on beam and target enegry
-  /// passes Look into the "en2hit" histogram after changing return value of
-  /// this function
-
-  // THIS FUNCTION DOES NOT SEEM TO BE USED!???
-
-  TCutG *cutg = new TCutG("CUTG", 18);
-  cutg->SetPoint(0, 94.485, 426.337);
-  cutg->SetPoint(1, 120.133, 412.173);
-  cutg->SetPoint(2, 139.99, 391.714);
-  cutg->SetPoint(3, 211.971, 317.746);
-  cutg->SetPoint(4, 256.648, 240.631);
-  cutg->SetPoint(5, 303.808, 198.139);
-  cutg->SetPoint(6, 308.772, 144.63);
-  cutg->SetPoint(7, 272.368, 53.3511);
-  cutg->SetPoint(8, 236.792, 42.3347);
-  cutg->SetPoint(9, 172.257, 87.9743);
-  cutg->SetPoint(10, 131.716, 143.057);
-  cutg->SetPoint(11, 113.514, 202.86);
-  cutg->SetPoint(12, 74.6282, 289.418);
-  cutg->SetPoint(13, 44.0158, 325.615);
-  cutg->SetPoint(14, 36.5695, 394.861);
-  cutg->SetPoint(15, 50.6347, 427.911);
-  cutg->SetPoint(16, 68.8367, 432.632);
-  cutg->SetPoint(17, 94.485, 426.337);
-
-  // Switch comments around to apply the cut or not
-  // return cutg->IsInside( BEn, TEn );
-  return true; // no cut applied
-}
-
 float doppler::GetCDOffset() {
 
   /// Return offset of the CD in the phi rotation from vertical in degrees
@@ -498,16 +465,13 @@ float doppler::GetPPhi(int quad, int seg, int sector) {
 
   float ph_det[4];
   if (sector == 4) { // standard CD
-
     ph_det[0] = 0.0 + cdoffset;   // top
     ph_det[1] = 90.0 + cdoffset;  // right
     ph_det[2] = 180.0 + cdoffset; // bottom
     ph_det[3] = 270.0 + cdoffset; // left
-
   }
 
   else { // CREX and TREX
-
     ph_det[0] = 0.0 + cdoffset;   // top
     ph_det[1] = 180.0 + cdoffset; // bottom
     ph_det[2] = 270.0 + cdoffset; // left
