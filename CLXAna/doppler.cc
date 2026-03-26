@@ -521,9 +521,6 @@ float doppler::GetQPhi(int quad, int seg, int sector) {
  * @return Target scattering angle.
  */
 float doppler::GetTTh(float BEn, float BTheta) {
-
-  /// Returns theta angle of T using angle and energy of B
-
   float tau = Ab / At;
   float Eprime = Eb * Ab - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Eb * Ab / Eprime);
@@ -582,11 +579,6 @@ float doppler::GetBTh(float TTheta) {
  * @return Target energy.
  */
 float doppler::GetTEn(float BEn, float BTheta) {
-
-  /// Function to calculate the energy of the recoiling target
-  /// given the energy and the angle of the scattered beam
-  /// Returns the energy after the target in keV
-
   // Correct for dead layer loss
   float dist = TMath::Abs(deadlayer / TMath::Cos(BTheta));
   float Eproj = BEn + GetELoss(BEn, dist, 1, "BS");
@@ -621,11 +613,6 @@ float doppler::GetTEn(float BEn, float BTheta) {
  * @return Beam energy.
  */
 float doppler::GetBEn(float TEn, float TTheta) {
-
-  /// Function to calculate the energy of the scattered beam
-  /// given the energy and the angle of the recoiling target
-  /// Returns the energy after the target in keV
-
   // Correct for dead layer loss
   float dist = TMath::Abs(deadlayer / TMath::Cos(TTheta));
   float Etarg = TEn + GetELoss(TEn, dist, 1, "TS");
