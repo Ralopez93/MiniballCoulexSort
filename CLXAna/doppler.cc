@@ -637,24 +637,32 @@ float doppler::GetBEn(float TEn, float TTheta) {
   else
     return Eproj;
 }
-
-float doppler::GetELoss(float Ei, float dist, int opt, string combo) {
-
-  /** Returns the energy loss at a given initial energy and distance travelled in the target,
-   *  the contaminant layer or Si dead layer Ei is the initial energy in keV,
-   *  return value is also in keV dist is the distance travelled in the target in mg/cm2.
-   * 
-   *  opt = 0 calculates normal energy loss as particle moves through target (default)
-   *  opt = 1 calculates energy increase, i.e. tracing particle back
-   *  to reaction point combo = "BT", "TT", "BC", "TC", "BS" or "TS" for the
-   *  beam in target, target in target, beam in contaminant, target in
-   *  contaminant, beam in Si or target in Si, respectively.
-   * 
-   *  Stopping power data  is taken from SRIM the output files must be placed in the
-   *  './srim/' folder with the format 62Fe_109Ag.txt, 62Fe_Si.txt, 109Ag_109Ag.txt or
-   *  109Ag_Si.txt, for combo = "BT", "TT", "BS" and "TS", repsectively. The
-   *  srim file should be in units of MeV/(mg/cm^2)
+  /** 
    */
+/**
+ * @brief Returns the energy loss at a given initial energy and distance travelled in the target,
+ *  the contaminant layer or Si dead layer Ei is the initial energy in keV,
+ *  return value is also in keV dist is the distance travelled in the target in mg/cm2.
+ * 
+ *  opt = 0 calculates normal energy loss as particle moves through target (default)
+ *  opt = 1 calculates energy increase, i.e. tracing particle back
+ *  to reaction point combo = "BT", "TT", "BC", "TC", "BS" or "TS" for the
+ *  beam in target, target in target, beam in contaminant, target in
+ *  contaminant, beam in Si or target in Si, respectively.
+ * 
+ *  Stopping power data  is taken from SRIM the output files must be placed in the
+ *  './srim/' folder with the format 62Fe_109Ag.txt, 62Fe_Si.txt, 109Ag_109Ag.txt or
+ *  109Ag_Si.txt, for combo = "BT", "TT", "BS" and "TS", repsectively. The
+ *  srim file should be in units of MeV/(mg/cm^2)
+ * 
+ * @param Ei Initial energy.
+ * @param dist distance traveled.
+ * @param opt Option.
+ * @param combo Reaction combo.
+ * 
+ * @return Energy loss.
+ */
+float doppler::GetELoss(float Ei, float dist, int opt, string combo) {
 
   double dedx = 0;
   int Nmeshpoints = 20; // number of steps to take in integration
