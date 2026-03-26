@@ -25,6 +25,7 @@ void PrintInput() {
   cout << "cutfile = " << cutfilename << endl;
   cout << "calfile = " << calfilename << endl;
   cout << "clu_tune = " << clu_tune << endl;
+  cout << "np_only = " << np_only << endl;
   if (usekin)
     cout << "Using two-body kinematics for particle velocity" << endl;
   else
@@ -66,6 +67,7 @@ int main(int argc, char *argv[]) {
   interface->Add("-cal", "Calibration file", &calfilename);
   interface->Add("-clutune", "Cluster switch for angletuning", &clu_tune);
   interface->Add("-cur_run_nbr", "Tag data with the given run number", &cur_run_nbr);
+  interface->Add("-np_only", "Only sort entries with np number of particles, skipping rest.", &np_only);
 
   interface->CheckFlags(argc, argv);
 
@@ -172,6 +174,7 @@ int main(int argc, char *argv[]) {
     srim = config->GetValue("srim", "./srim");
     usekin = config->GetValue("usekin", false);
     usekinloss = config->GetValue("usekinloss", false);
+    np_only = config->GetValue("np", 0);
   }
 
   // Parameters are already read from the command line if not overwritten by config file.
@@ -198,6 +201,7 @@ int main(int argc, char *argv[]) {
     clx.calfile = calfilename;
     clx.clu_tune = clu_tune;
     clx.cur_run_nbr = cur_run_nbr;
+    clx.np_only = np_only;
     cout << "Input parameters:" << endl;
     PrintInput();
   } else {

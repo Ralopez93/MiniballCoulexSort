@@ -88,10 +88,9 @@ public:
 	// fill functions
   // fill Tree
   void FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid, int GSid, vector <float> GCor_GEn, vector <float> GCor_GTh,
-		vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <int> GCor_GCid, vector <int> GCor_GSid,
-		vector <float> GCor_Gtd,
+		vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <int> GCor_GCid, vector <int> GCor_GSid, vector <float> GCor_Gtd,
 		vector <int> Laser, vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec,
-		vector <int> Pquad, vector <float> Ptd, vector<double> Ptimes, int cur_run_nbr);
+		vector <int> Pquad, vector <float> Ptd, vector<double> Ptimes, int cur_run_nbr, int np_only);
   
 private:
   vector<int> laser_passed;

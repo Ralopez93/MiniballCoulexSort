@@ -532,7 +532,6 @@ void hists::doRoutineXP(float GEn, float GTh, float GPh, int GCluid, int GCid,
   for (int j = 0; j < v1p.size(); j++) {
     laser = laser_passed[v1p[j]];
     np = 1;
-    //	 b2p = 0;
     tdpp = 0.;
     time[0] = times_passed[v1p[j]];
     ep[0] = PEn_passed[v1p[j]];
@@ -589,7 +588,6 @@ void hists::doRoutineXP(float GEn, float GTh, float GPh, int GCluid, int GCid,
       if (dc.UseKin()) {
         // Use the two-body kinematics.
         thr[0] = dc.GetTThLabB(thp[0]);
-
         ep[0] = dc.GetBEnKinB(thp[0]);
         er[0] = dc.GetTEnKinB(thr[0], thp[0]);
       } else {
@@ -725,10 +723,12 @@ void hists::doRoutineXP(float GEn, float GTh, float GPh, int GCluid, int GCid,
  * @param Pnf Annular (front) strip ID of particle (0 = outer; 15 inner). A.K.A front CD Ring ID.
  * @param Pnb Secular (back) strip ID of particle (0 to 12; clockwise wrt beam).
  * @param Psec Sector of C-REX (0 = FCD; 1 = FBarrel; 2 = BBarrel; 3 = BCD).
+ *              FCD = Forward CD? BCD = Backward CD?
  * @param Pquad Detector (quadrant) number of particle
  * @param Ptd Particle-gamma time difference in 25 ns timestamps.
  * @param Ptimes Particle times in 25 ns timestamps.
  * @param cur_run_nbr The current run number or 0 if not provided by user.
+ * @param np_only Only sort entries with np number of particles, skipping rest.
  */
 void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
                      int GSid, vector<float> GCor_GEn, vector<float> GCor_GTh,
@@ -737,7 +737,7 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
                      vector<float> GCor_Gtd, vector<int> Laser,
                      vector<float> PEn, vector<int> Pnf, vector<int> Pnb,
                      vector<int> Psec, vector<int> Pquad, vector<float> Ptd,
-                     vector<double> Ptimes, int cur_run_nbr) {
+                     vector<double> Ptimes, int cur_run_nbr, int np_only) {
 
   resetVar();
 
@@ -771,15 +771,17 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
 
   // Introduce a flag that lets us only sort 1P events, skipping 2+?
 
-  if (np_passed == 1) {
+  if ((np_passed == 1) &&
+      ((np_only == 0) || (np_only == np_passed))) {
     // 1-particle case, PID identified.
     doRoutine1P(GEn, GTh, GPh, GCluid, GCid, GSid, GCor_GEn, GCor_GTh,
                 GCor_GPh, GCor_GCluID, GCor_GCid, GCor_GSid, GCor_Gtd);
-  } else if (np_passed == 2) {
+  } else if (np_passed == 2 &&
+             ((np_only == 0) || (np_only == np_passed))) {
     // 2-particle case.
     doRoutine2P(GEn, GTh, GPh, GCluid, GCid, GSid, GCor_GEn, GCor_GTh,
                 GCor_GPh, GCor_GCluID, GCor_GCid, GCor_GSid, GCor_Gtd);
-  } else {
+  } else if ((np_only == 0) || (np_only == np_passed)){
     // 3-4p events, loop through for 2p correlations and sort uncorrelated events as 1p.
     doRoutineXP(GEn, GTh, GPh, GCluid, GCid, GSid, GCor_GEn, GCor_GTh,
                 GCor_GPh, GCor_GCluID, GCor_GCid, GCor_GSid, GCor_Gtd,

@@ -266,10 +266,10 @@ bool doppler::stoppingpowers(string opt) {
 
 /**
  * @brief Check if entry passes any particle gates. Graphical cuts are used
- * if they are given in the confif file or on the command line with the -cut option.
+ * if they are given in the config file or on the command line with the -cut option.
  * 
  * @param PEn Particle energy.
- * @param nf Annular (front) strip ID for particle.
+ * @param ring Annular (front) strip ID for particle.
  * @param PTheta Particle scattering angle.
  *
  * @return PID of particle, -1 if outside gates.
@@ -485,9 +485,16 @@ float doppler::GetPTh(float ring, int sector) {
   return angle;
 }
 
+/**
+ * @brief Get phi angle from quadrant and ohm strip number in radians.
+ * 
+ * @param quad CD quadrant.
+ * @param seg CD Segment
+ * @param sector CD sector (forward, backward, ...)?
+ * 
+ * @return Phi angle. 
+ */
 float doppler::GetPPhi(int quad, int seg, int sector) {
-
-  /// Returns phi angle from quadrant and ohm strip number in radians
 
   float ph_det[4];
   if (sector == 4) { // standard CD
@@ -527,10 +534,16 @@ float doppler::GetPPhi(int quad, int seg, int sector) {
     return (pphi - 360.) * TMath::DegToRad();
 }
 
+/**
+ * @brief Get phi angle of B/T using angle of T/B.
+ * 
+ * @param quad CD quadrant.
+ * @param seg CD Segment
+ * @param sector CD sector (forward, backward, ...)?
+ * 
+ * @return Phi angle. 
+ */
 float doppler::GetQPhi(int quad, int seg, int sector) {
-
-  /// Returns phi angle of B/T using angle of T/B
-
   return GetPPhi(quad, seg, sector) + TMath::Pi();
 }
 

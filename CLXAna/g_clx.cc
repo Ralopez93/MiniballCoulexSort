@@ -128,7 +128,7 @@ void g_clx::Loop(string outputfilename) {
 
     h.FillTree(gen, tha, pha, cluid, cid, sid, // single gamma
                gcor_gen, gcor_tha, gcor_pha, gcor_cluid, gcor_cid, gcor_sid, gcor_gtd, // correlated gamma
-               laser, pen, nf, nb, sector, det, td, time, cur_run_nbr); // particle info
+               laser, pen, nf, nb, sector, det, td, time, cur_run_nbr, np_only); // particle info
 
   }
 

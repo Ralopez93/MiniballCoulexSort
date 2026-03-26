@@ -41,5 +41,6 @@ bool		usekin = false;		    ///< Flag to use two-body kinematics for particle vel
 bool		usekinloss = false;		///< Flag to use energy loss with SRIM when using two-body kinematics for velocity
 int     clu_tune = -1;        ///< Flag to choose cluster for angle tuning
 int     cur_run_nbr = 0;      ///< Tag data with current run number. 
+int     np_only = 0;               ///< Only sort entries with np number of particles, skipping rest. 
 
 void PrintInput();
