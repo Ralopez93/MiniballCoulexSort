@@ -26,6 +26,8 @@ void PrintInput() {
   cout << "calfile = " << calfilename << endl;
   cout << "clu_tune = " << clu_tune << endl;
   cout << "np_only = " << np_only << endl;
+  if (print_angles)
+    cout << "Priting crystal angles for each cluster." << endl;
   if (usekin)
     cout << "Using two-body kinematics for particle velocity" << endl;
   else
@@ -66,6 +68,7 @@ int main(int argc, char *argv[]) {
   interface->Add("-usekinloss", "Use energy loss with SRIM when using two-body kinematics for velocity.", &usekinloss);
   interface->Add("-cal", "Calibration file", &calfilename);
   interface->Add("-clutune", "Cluster switch for angletuning", &clu_tune);
+  interface->Add("-print_angles", "Print crystal angles of each cluster", &print_angles);
   interface->Add("-cur_run_nbr", "Tag data with the given run number", &cur_run_nbr);
   interface->Add("-np_only", "Only sort entries with np number of particles, skipping rest.", &np_only);
 
@@ -175,6 +178,7 @@ int main(int argc, char *argv[]) {
     usekin = config->GetValue("usekin", false);
     usekinloss = config->GetValue("usekinloss", false);
     np_only = config->GetValue("np_only", 0);
+    print_angles = config->GetValue("print_angles", false);
   }
 
   // Parameters are already read from the command line if not overwritten by config file.
@@ -200,6 +204,7 @@ int main(int argc, char *argv[]) {
     clx.usekinloss = usekinloss;
     clx.calfile = calfilename;
     clx.clu_tune = clu_tune;
+    clx.print_angles = print_angles;
     clx.cur_run_nbr = cur_run_nbr;
     clx.np_only = np_only;
     cout << "Input parameters:" << endl;

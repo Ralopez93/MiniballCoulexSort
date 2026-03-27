@@ -36,6 +36,7 @@ void g_clx::Loop(string outputfilename) {
   doppler dc;
   dc.ExpDefs(Zb, Ab, Zt, At, Eb, Ex, thick, depth, cddist, cdoffset, deadlayer,
              contaminant, spededist, Bcut, Tcut, srim, usekin, usekinloss, calfile);
+
   dc.mbAngles(clusters); // re-define MB angles
 
   if (clusters.size() != 8) {
@@ -43,13 +44,15 @@ void g_clx::Loop(string outputfilename) {
     return;
   }
 
-  std::cout << "Printing angles for Crystals: (theta, phi)." << std::endl;
-  for (int i = 0; i < clusters.size(); i++) {
-    std::cout << "Cluster " << i << "\n"
-              << "\tCrystal 0 (" << clusters[i].crystals[0].theta << ", " << clusters[i].crystals[0].phi << ")\n"
-              << "\tCrystal 1 (" << clusters[i].crystals[1].theta << ", " << clusters[i].crystals[1].phi << ")\n"
-              << "\tCrystal 2 (" << clusters[i].crystals[2].theta << ", " << clusters[i].crystals[2].phi << ")\n"
-              << std::endl;
+  if (print_angles) {
+    std::cout << "Printing angles for Crystals: (theta, phi)." << std::endl;
+    for (int i = 0; i < clusters.size(); i++) {
+      std::cout << "Cluster " << i << "\n"
+                << "\tCrystal 0 (" << clusters[i].crystals[0].theta << ", " << clusters[i].crystals[0].phi << ")\n"
+                << "\tCrystal 1 (" << clusters[i].crystals[1].theta << ", " << clusters[i].crystals[1].phi << ")\n"
+                << "\tCrystal 2 (" << clusters[i].crystals[2].theta << ", " << clusters[i].crystals[2].phi << ")\n"
+                << std::endl;
+    }
   }
 
   // Create stopping power curves from the srim output files

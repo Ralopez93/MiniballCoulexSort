@@ -103,6 +103,7 @@ class g_clx : public TObject {
 	bool			usekinloss;			///< Flag to use energy loss with SRIM when using two-body kinematics for velocity
   string    calfile;
 	int       clu_tune;             // cluster for angle tuning (1 per process)
+	bool       print_angles;             // Print crystal angles of each cluster
 	int 			np_only;					///< Only sort entries with np number of particles, skipping rest.
 
 	// List of branches
