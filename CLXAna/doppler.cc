@@ -11,11 +11,13 @@
 
 TRandom3 doppler::rand = 1;
 
+// True if we assume that, on average, the gamma was emitted after traversing the target.
+
 void doppler::ExpDefs(int Zb_, float Ab_, int Zt_, float At_, float Eb_,
                       float Ex_, float thick_, float depth_, float cddist_,
                       float cdoffset_, float deadlayer_, float contaminant_,
                       float spededist_, TCutG *Bcut_, TCutG *Tcut_,
-                      string srimfile_, bool usekin_, bool usekinloss_, string calfile_) {
+                      string srimfile_, bool emit_outside_targ_, bool usekin_, bool usekinloss_, string calfile_) {
 
   /// Initialisation of experimental definitions from command line of config
   /// file
@@ -35,6 +37,7 @@ void doppler::ExpDefs(int Zb_, float Ab_, int Zt_, float At_, float Eb_,
   Bcut = Bcut_;
   Tcut = Tcut_;
   srimfile = srimfile_;
+  emit_outside_targ = emit_outside_targ_;
   usekin = usekin_;
   usekinloss = usekinloss_;
   calfile = calfile_;
@@ -286,30 +289,8 @@ int doppler::Cut(float PEn, float ring, float PTheta) {
     else if (Tcut->IsInside(ang, PEn / 1000.))
       identity = PID_TARG;
 
-  } else if (Ab > At) {
-    // inverse kinematics, include overlap region
-    double a = 349.07, b = -4.997, c = -0.0145;
-
-    if (PEn / 1000. <= (a + b * ang + c * ang * ang) && ring < 15)
-      identity = PID_BEAM;
-    else if (ring < 15)
-      identity = PID_TARG;
-  } else {
-    // normal kinematics with Beam/Target separation
-    double a = 497.602, b = -4.67677, c = -0.0274333, l = 0;
-    double d = 435.186, e = -7.84811, f = 0.0199164, k = 0;
-    double g = 0, h = 0, i = 0, n = 0;
-
-    if (PEn / 1000. <= (a + b * ang + c * ang * ang + l * ang * ang * ang) &&
-        PEn / 1000. >= (d + e * ang + f * ang * ang + k * ang * ang * ang))
-
-      identity = PID_BEAM;
-
-    else if (PEn / 1000. <= (d + e * ang + f * ang * ang + k * ang * ang * ang) &&
-             PEn / 1000. >= (g + h * ang + i * ang * ang + n * ang * ang * ang))
-
-      identity = PID_TARG;
-  }
+  } else
+    throw std::runtime_error("Could not use kinematic cuts for evaluation of particle.");
 
   return identity;
 }
@@ -372,6 +353,20 @@ float doppler::GetCDDeadLayer() {
   return deadlayer;
 }
 
+float doppler::GetCDDist(float Th) {
+
+  /// Return distance in Si due to dead layer in mm
+
+  return TMath::Abs(deadlayer / TMath::Cos(Th) );
+}
+
+float doppler::GetTargDist(float Th) {
+
+  /// Return distance in target in mm, after reaction.
+
+  return TMath::Abs((thick - depth) / TMath::Cos(Th) );
+}
+
 int doppler::GetZb() {
 
   /// Return Z of the projectile as an int
@@ -425,7 +420,7 @@ float doppler::GetPTh(float ring, int sector) {
 
     // Avoid using global seed. Just want to keep the Theta calculations consistent.
     // Set to static to avoid resetting the RNG.
-    // Variable lifetime is now same as program and not function.
+    // Variable scope is now same as program and not function.
     static TRandom3 rng(1);
     angle = rng.Uniform(angle_lower, angle_upper);
   }
@@ -515,35 +510,25 @@ float doppler::GetQPhi(int quad, int seg, int sector) {
  * @brief Get target scattering angle from beam energy and 
  * beam scattering angle
  * 
- * @param BEn 
- * @param BTheta 
+ * Note: Inverse kinematics section has been removed!
+ * 
+ * @param BTheta Beam scattering angle.
  * 
  * @return Target scattering angle.
  */
-float doppler::GetTTh(float BEn, float BTheta) {
+float doppler::GetTTh(float BTheta) {
   float tau = Ab / At;
   float Eprime = Eb * Ab - Ex * (1 + tau);
   float epsilon = TMath::Sqrt(Eb * Ab / Eprime);
   float x, y, TTh;
-  if (tau > 1) { // inverse kinematics: maximum scattering angle may be exceeded...
-    y = TMath::ASin(1. / (tau * epsilon)); // maximum projectile angle in lab
-    if (BTheta < y)
-      y = BTheta;
-    y = TMath::Tan(y);
-  } else {
-    y = TMath::Tan(BTheta); // y = tan(Theta_projlab)
-  }
-  if (tau > 1 && rand.Gaus(BEn, 30000.) < 50000.) {
-    x = (y * y * epsilon * tau + TMath::Sqrt(-y * y * epsilon * epsilon * tau * tau + y * y + 1)) / (1 + y * y);
-  } else {
-    x = (y * y * epsilon * tau -
-         TMath::Sqrt(-y * y * epsilon * epsilon * tau * tau + y * y + 1)) /
-        (1 + y * y);
-  }
-  TTh = TMath::ATan(
-      TMath::Sqrt(1 - x * x) /
-      (epsilon + x)); // choose kinematic branch using energy cut... as I
-                      // haven't a clue how to do it any other way?!
+
+  y = TMath::Tan(BTheta); // y = tan(Theta_projlab)
+  x = (y * y * epsilon * tau - TMath::Sqrt(-y * y * epsilon * epsilon * tau * tau + y * y + 1)) / (1 + y * y);
+
+  TTh = TMath::ATan(TMath::Sqrt(1 - x * x) / (epsilon + x));
+  // choose kinematic branch using energy cut... as I
+  // haven't a clue how to do it any other way?!
+
   if (TTh < 0)
     TTh += TMath::Pi();
   return TTh;
@@ -571,57 +556,52 @@ float doppler::GetBTh(float TTheta) {
 }
 
 /**
- * @brief Get target energy from beam energy and beam scattering angle.
+ * @brief Get beam energy at reaction point from detected beam energy
+ * and beam scattering angle.
  * 
- * @param BEn Beam energy.
- * @param BTheta Beam scattering angle. 
- *
- * @return Target energy.
+ * @param BEn Detected beam energy.
+ * @param BTheta Beam scattering angle.
+ * 
+ * @return Beam energy at reaction point.
  */
-float doppler::GetTEn(float BEn, float BTheta) {
-  // Correct for dead layer loss
-  float dist = TMath::Abs(deadlayer / TMath::Cos(BTheta));
-  float Eproj = BEn + GetELoss(BEn, dist, 1, "BS");
+float doppler::GetBEnB(float BEn, float BTheta) {
+  float Eproj = BEn;
 
-  // Trace energy loss back through target to get energy at interaction point
-  dist = TMath::Abs((thick - depth) / TMath::Cos(BTheta));
-  Eproj += GetELoss(Eproj, dist, 1, "BT");
+  Eproj += GetELoss(Eproj, GetCDDist(BTheta), 1, "BS" );
 
-  float Etarg = Ereac - Eproj;
-  if (Etarg < 0.1)
-    return 0.1; // recoil is stopped in target
+  // If emitted outside target, then do not add energy due to subsequent interaction with target.
+  if (!emit_outside_targ)
+    Eproj += GetELoss(Eproj, GetTargDist(BTheta), 1, "BT" );
 
-  float angle = GetTTh(BEn, BTheta);
-  if (angle < 0.501 * TMath::Pi() && angle > 0.499 * TMath::Pi())
-    return 0.1; // stopped
-
-  dist = TMath::Abs((thick - depth) / TMath::Cos(angle));
-  Etarg -= GetELoss(Etarg, dist, 0, "TT");
-
-  if (Etarg < 0.1)
-    return 0.1;
-  else
-    return Etarg;
+  return Eproj;
 }
 
 /**
- * @brief Get beam energy from target energy and target scattering angle.
+ * @brief Get beam energy at reaction point from detected target energy
+ * and target scattering angle.
  * 
- * @param TEn Target energy.
+ * The energy corresponds to the beam particle having traversed the target,
+ * but not hit the detector.
+ * 
+ * @param TEn Detected target energy.
  * @param TTheta Target scattering angle.
  * 
  * @return Beam energy.
  */
-float doppler::GetBEn(float TEn, float TTheta) {
-  // Correct for dead layer loss
-  float dist = TMath::Abs(deadlayer / TMath::Cos(TTheta));
-  float Etarg = TEn + GetELoss(TEn, dist, 1, "TS");
+float doppler::GetBEnT(float TEn, float TTheta) {
+  float Etarg = GetTEnT(TEn, TTheta);
 
-  // Trace energy loss back through target to get energy at interaction point
-  dist = TMath::Abs((thick - depth) / TMath::Cos(TTheta));
-  Etarg += GetELoss(Etarg, dist, 1, "TT");
+  // If emitted outside target, we need to add energy due to interaction with target
+  // for the calculation of Eproj at the reaction point.
+  if (emit_outside_targ)
+    Etarg += GetELoss(Etarg, GetTargDist(TTheta), 1, "TT" );
 
   float Eproj = Ereac - Etarg;
+
+  // If emitted outside target, then subtract energy due to subsequent interaction with target.
+  if (emit_outside_targ)
+    Eproj -= GetELoss(Eproj, GetTargDist(TTheta), 0, "BT" );
+
   if (Eproj < 0.1)
     return 0.1; // projectile is stopped in target
 
@@ -629,24 +609,72 @@ float doppler::GetBEn(float TEn, float TTheta) {
   if (angle < 0.501 * TMath::Pi() && angle > 0.499 * TMath::Pi())
     return 0.1; // stopped
 
-  dist = TMath::Abs((thick - depth) / TMath::Cos(angle));
-  Eproj -= GetELoss(Eproj, dist, 0, "BT");
-
-  if (Eproj < 0.1)
-    return 0.1;
-  else
-    return Eproj;
+  return Eproj;
 }
-  /** 
-   */
+
+/**
+ * @brief Get target energy at reaction point from detected target energy
+ * and target scattering angle.
+ * 
+ * 
+ * @param TEn Detected beam energy.
+ * @param TTheta Beam scattering angle. 
+ *
+ * @return Target energy.
+ */
+float doppler::GetTEnT(float TEn, float TTheta) {
+  float Etarg = TEn;
+
+  Etarg += GetELoss(Etarg, GetCDDist(TTheta), 1, "TS" );
+
+  // If emitted outside target, then do not add energy due to interaction with target.
+  if (!emit_outside_targ)
+    Etarg += GetELoss(Etarg, GetTargDist(TTheta), 1, "TT" );
+
+  return Etarg;
+}
+
+/**
+ * @brief Get target energy at reaction point from detected beam energy
+ * and beam scattering angle.
+ * 
+ * @param BEn Beam energy, corrected for energy loss in target and dead layer.
+ * @param BTheta Beam scattering angle. 
+ *
+ * @return Target energy.
+ */
+float doppler::GetTEnB(float BEn, float BTheta) {
+  float Eproj = GetBEnB(BEn, BTheta);
+
+  // If emitted outside target, we need to add energy due to interaction with target
+  // for the calculation of Etarg at the reaction point.
+  if (emit_outside_targ)
+    Eproj += GetELoss(Eproj, GetTargDist(BTheta), 1, "TT" );
+
+  float Etarg = Ereac - Eproj;
+
+  // If emitted outside target, then subtract energy due to interaction with target.
+  if (emit_outside_targ)
+    Etarg -= GetELoss(Etarg, GetTargDist(BTheta), 0, "BT" );
+
+  if (Etarg < 0.1)
+    return 0.1; // recoil is stopped in target
+
+  float angle = GetTTh(BTheta);
+  if (angle < 0.501 * TMath::Pi() && angle > 0.499 * TMath::Pi())
+    return 0.1; // stopped
+
+  return Etarg;
+}
+
 /**
  * @brief Returns the energy loss at a given initial energy and distance travelled in the target,
  *  the contaminant layer or Si dead layer Ei is the initial energy in keV,
  *  return value is also in keV dist is the distance travelled in the target in mg/cm2.
  * 
  *  opt = 0 calculates normal energy loss as particle moves through target (default)
- *  opt = 1 calculates energy increase, i.e. tracing particle back
- *  to reaction point combo = "BT", "TT", "BC", "TC", "BS" or "TS" for the
+ *  opt = 1 calculates energy increase, i.e. tracing particle back to reaction point
+ *  combo = "BT", "TT", "BC", "TC", "BS" or "TS" for the
  *  beam in target, target in target, beam in contaminant, target in
  *  contaminant, beam in Si or target in Si, respectively.
  * 
@@ -665,8 +693,8 @@ float doppler::GetBEn(float TEn, float TTheta) {
 float doppler::GetELoss(float Ei, float dist, int opt, string combo) {
 
   double dedx = 0;
-  int Nmeshpoints = 20; // number of steps to take in integration
-  double dx = dist / (double)Nmeshpoints;
+  int Nmeshpoints = 100; // number of steps to take in integration
+  double dx = dist / (double) Nmeshpoints;
   double E = Ei;
 
   for (int i = 0; i < Nmeshpoints; i++) {
@@ -697,36 +725,6 @@ float doppler::GetELoss(float Ei, float dist, int opt, string combo) {
     return Ei - E;
   else
     return E - Ei;
-}
-
-/**
- * @brief Calculate the energy loss for the beam in target.
- * Should only be used together with Catkin 2B procedure (usekin)..
- * 
- * @param BEn Beam energy.
- * @param BTh Beam scattering angle
- * 
- * @return Calcualted energy loss for beam in target.
- */
-float doppler::GetBKinLoss(float BEn, float BTh) {
-  float dist = TMath::Abs((thick - depth) / TMath::Cos(BTh));
-
- return GetELoss(BEn, dist, 0, "BT");
-}
-
-/**
- * @brief Calculate the energy loss for the target in target.
- * Should only be used together with Catkin 2B procedure (usekin).
- * 
- * @param TEn Target energy.
- * @param TTh Target scattering angle.
- * 
- * @return Calcualted energy loss for beam in target.
- */
-float doppler::GetTKinLoss(float TEn, float TTh) {
-  float dist = TMath::Abs((thick - depth) / TMath::Cos(TTh));
-
- return GetELoss(TEn, dist, 0, "TT");
 }
 
 /**
@@ -921,17 +919,17 @@ float doppler::GetTEnKin(float CoM) {
  * 
  * This is used when beam was detected.
  * 
- * @param BTh theta angle of the beam in laboratory frame (detected).
+ * @param BTh Detected theta beam angle in the laboratory frame.
  * @param kinflag kinematics flag such that true is the backwards solution (i.e. CoM > 90 deg).
  * 
  * @return The calculated beam energy. 
  */
 float doppler::GetBEnKinB(float BTh, bool kinflag) {
-  float BEn = GetBEnKin(GetBThCoM(BTh, kinflag));
+  float BEn = GetBThCoM(BTh, kinflag);
 
-  if (usekinloss) {
-    BEn -= GetBKinLoss(BEn, BTh);
-  }
+  // If emitted outside target, then subtract energy due to interaction with target.
+  if (emit_outside_targ)
+    BEn -= GetELoss(BEn, GetTargDist(BTh), 0, "BT" );
 
   return BEn;
 }
@@ -942,18 +940,18 @@ float doppler::GetBEnKinB(float BTh, bool kinflag) {
  * 
  * This is used when target was detected, and not beam.
  * 
- * @param TTh theta angle of the target in laboratory frame (detected).
- * @param BTh theta angle of the beam in laboratory frame (calculated).
+ * @param TTh Detected theta target angle in the laboratory frame.
  * @param kinflag kinematics flag such that true is the backwards solution (i.e. CoM > 90 deg).
  * 
  * @return The calculated beam energy. 
  */
-float doppler::GetBEnKinT(float TTh, float BTh, bool kinflag) {
-  float BEn = GetTEnKin(GetTThCoM(TTh, kinflag));
+float doppler::GetBEnKinT(float TTh, bool kinflag) {
+  float BEn = GetBEnKin(GetTThCoM(TTh, kinflag));
+  float BTh = GetBThLabT(TTh);
 
-  if (usekinloss) {
-    BEn -= GetTKinLoss(BEn, BTh);
-  }
+  // If emitted outside target, then subtract energy due to interaction with target.
+  if (emit_outside_targ)
+    BEn -= GetELoss(BEn, GetTargDist(BTh), 0, "BT" );
 
   return BEn;
 }
@@ -964,19 +962,18 @@ float doppler::GetBEnKinT(float TTh, float BTh, bool kinflag) {
  * 
  * This is used when beam was detected, and not target.
  * 
- * @param BTh theta angle of the beam in laboratory frame (detected).
- * @param TTh theta angle of the target in laboratory frame (calculated).
+ * @param BTh Detected theta beam angle in the laboratory frame.
  * @param kinflag kinematics flag such that true is the backwards solution (i.e. CoM > 90 deg).
  * 
  * @return The calculated beam energy using target angle.
  */
-float doppler::GetTEnKinB(float BTh, float TTh, bool kinflag) {
-
+float doppler::GetTEnKinB(float BTh, bool kinflag) {
   float TEn = GetTEnKin(GetBThCoM(BTh, kinflag));
+  float TTh = GetTThLabB(BTh);
 
-  if (usekinloss) {
-    TEn -= GetTKinLoss(TEn, TTh);
-  }
+  // If emitted outside target, then subtract energy due to interaction with target.
+  if (emit_outside_targ)
+    TEn -= GetELoss(TEn, GetTargDist(TTh), 0, "TT" );
 
   return TEn;
 }
@@ -987,17 +984,17 @@ float doppler::GetTEnKinB(float BTh, float TTh, bool kinflag) {
  * 
  * This is used when target was detected.
  * 
- * @param TTh theta angle of the target in laboratory frame (detected).
+ * @param TTh Detected theta target angle in the laboratory frame.
  * @param kinflag kinematics flag such that true is the backwards solution (i.e. CoM > 90 deg).
  * 
  * @return The calculated target energy using target angle. 
  */
 float doppler::GetTEnKinT(float TTh, bool kinflag) {
-  float TEn = GetBEnKin(GetTThCoM(TTh, kinflag));
+  float TEn = GetTEnKin(GetTThCoM(TTh, kinflag));
 
-  if (usekinloss) {
-    TEn -= GetBKinLoss(TEn, TTh);
-  }
+  // If emitted outside target, then subtract energy due to interaction with target.
+  if (emit_outside_targ)
+    TEn -= GetELoss(TEn, GetTargDist(TTh), 0, "TT" );
 
   return TEn;
 }
@@ -1075,26 +1072,6 @@ float doppler::DC(float PEn, float PTh, float PPhi, float GTh, float GPhi, float
   corr *= gamma;
 
   return corr;
-}
-
-float doppler::DC_elec(float een, float PEn, float PTh, float PPhi, float GTh,
-                       float GPhi, float A) {
-
-  /// Returns Doppler correction factor for given particle and electron
-  /// angular combination.  Factors in detected particle energy too
-
-  float beta = TMath::Sqrt(2 * PEn / (A * u_mass()));
-  float mass_e = 511.;
-  float gamma = 1. / TMath::Sqrt(1. - beta * beta);
-  float costheta =
-      sin(PTh) * sin(GTh) * cos(PPhi - GPhi) + (cos(PTh) * cos(GTh));
-
-  float energy = een + mass_e -
-                 beta * costheta * TMath::Sqrt(een * een + 2. * mass_e * een);
-  energy /= gamma;
-  energy -= mass_e;
-
-  return energy;
 }
 
 string doppler::convertInt(int number) {

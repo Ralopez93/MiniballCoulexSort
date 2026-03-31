@@ -56,7 +56,8 @@ public:
   double php[2];
   double thr[2];
   double phr[2];
-	
+	double com[2];
+
   int ng;
   double td[24];  // Particle-gamma time difference in 25 ns timestamps
   double eg[24]; // calibrated, not dc'ed gamma energy in keV

@@ -99,10 +99,10 @@ class g_clx : public TObject {
 	TCutG			*Bcut;			///< Graphical cut for beam-like particles
 	TCutG			*Tcut;			///< Graphical cut for target-like particles
 	string			srim;			///< Directory containing the srim files
+	bool			emit_outside_targ;			///< Flag to assume gamma emission outside of target on average.
 	bool			usekin;			///< Flag to use two-body kinematics for particle velocity
 	bool			usekinloss;			///< Flag to use energy loss with SRIM when using two-body kinematics for velocity
   string    calfile;
-	int       clu_tune;             // cluster for angle tuning (1 per process)
 	bool       print_angles;             // Print crystal angles of each cluster
 	int 			np_only;					///< Only sort entries with np number of particles, skipping rest.
 

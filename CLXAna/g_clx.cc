@@ -35,7 +35,7 @@ void g_clx::Loop(string outputfilename) {
   // Create doppler instance and set experimental parameters
   doppler dc;
   dc.ExpDefs(Zb, Ab, Zt, At, Eb, Ex, thick, depth, cddist, cdoffset, deadlayer,
-             contaminant, spededist, Bcut, Tcut, srim, usekin, usekinloss, calfile);
+             contaminant, spededist, Bcut, Tcut, srim, emit_outside_targ, usekin, usekinloss, calfile);
 
   dc.mbAngles(clusters); // re-define MB angles
 
@@ -62,8 +62,6 @@ void g_clx::Loop(string outputfilename) {
     cout << "Definition of stopping powers failed" << endl;
     return;
   }
-  // Test if it's an electron or gamma. Note: currently unused?
-  bool electron;
 
   // Include errors on histograms (required for correct bg subtraction)
   TH1::SetDefaultSumw2();
@@ -105,18 +103,10 @@ void g_clx::Loop(string outputfilename) {
            << jentry * 100. / fChain->GetEntries() << "%)    \r";
       cout << flush;
     }
-    if (clu_tune != -1 && cluid != clu_tune) {
-      continue;
-    }
 
-    // Is it an electron or gamma? Note: unused?
-    if (cluid < 8)
-      electron = false;
-    else if (cluid == 8)
-      electron = true;
-    else {
+    if (cluid > 8) {
       cout << "Unexpected cluid: " << cluid << endl;
-      break; // shouldn't be anything else
+      break;
     }
 
     // fill CLX tree according to standard convention

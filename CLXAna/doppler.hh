@@ -57,7 +57,7 @@ public:
   void	ExpDefs( int Zb_, float Ab_, int Zt_, float At_, float Eb_, float Ex_, float thick_,
 		 float depth_, float cddist_, float cdoffset_, float deadlayer_,
 		 float contaminant_, float spededist_, TCutG *Bcut_, TCutG *Tcut_,
-		 string srimfile_, bool usekin_, bool usekinloss_, string calfile_ );
+		 string srimfile_, bool emit_outside_targ_, bool usekin_, bool usekinloss_, string calfile_ );
   int Cut(float PEn, float ring, float PTheta );
   int Cut_2p(float PEn1, float ring1, float PTheta1,
 			       float PEn2, float ring2, float PTheta2 );
@@ -65,16 +65,20 @@ public:
   int		GetZt();
   float	GetAb();
   float	GetAt();
+  float GetTargDist(float Th);
+  float GetCDDist(float Th);
   float	GetCDOffset();
   float	GetCDDeadLayer();
   float	GetSpedeDist();
   float	GetPTh( float ring, int sector );
   float	GetPPhi( int quad, int seg, int sector );
-  float	GetTTh( float BEn, float BTheta );
+  float	GetTTh( float BTheta );
   float	GetBTh( float TTheta );
   float	GetQPhi( int quad, int seg, int sector );
-  float	GetTEn( float BEn, float BTheta );
-  float	GetBEn( float TEn, float TTheta );
+  float	GetBEnB( float BEn, float BTheta );
+  float	GetTEnB( float BEn, float BTheta );
+  float	GetTEnT( float TEn, float TTheta );
+  float	GetBEnT( float TEn, float TTheta );
   float	GetELoss( float Ei, float dist, int opt, string combo );
   float	GetBThLab( float CoM );
   float	GetTThLab( float CoM );
@@ -84,18 +88,15 @@ public:
   float	GetTThLabB( float BTh, bool kinflag = false );
   float	GetBEnKin( float CoM );
   float	GetBEnKinB( float BTh, bool kinflag = false );
-  float	GetBEnKinT( float BTh, float TTh, bool kinflag = false );
+  float	GetBEnKinT( float TTh, bool kinflag = false );
   float	GetTEnKin( float CoM );
-  float	GetTEnKinB( float TTh, float BTh, bool kinflag = false );
+  float	GetTEnKinB( float BTh, bool kinflag = false );
   float	GetTEnKinT( float TTh, bool kinflag = false );
-  float GetTKinLoss( float TEn, float TTh);
-  float GetBKinLoss( float BEn, float BTh);
   float	GammaAng( float PTh, float PPhi, float GTh, float GPhi );
   float GetGTh(int cid, int sid); 
   float GetGPh(int cid, int sid); 
   float	Beta( float Ek, float m );
   float	DC( float PEn, float PTh, float PPhi, float GTh, float GPhi, float A );
-  float	DC_elec( float een, float PEn, float PTh, float PPhi, float GTh, float GPhi, float A );
   bool	stoppingpowers( bool BT, bool TT, bool BS, bool TS, bool BC, bool TC );
   bool	stoppingpowers( string opt );
   void	reactionEnergy();
@@ -127,8 +128,9 @@ private:
   float	bg_frac;
   TCutG	*Bcut, *Tcut;
   string  srimfile;
+  bool  emit_outside_targ;
   bool	usekin;			///< flag to use two-body kinematics for velocity
-  bool	usekinloss;	///< flag to use energy loss with SRIM when using two-body kinematics for velocity
+  bool	usekinloss;	///< flag to adjust velocity calculation from energy with two-body kinematics
   string calfile; // re-load MB geometry parameters
   Calibration *Cal;
   MBGeometry mbg;

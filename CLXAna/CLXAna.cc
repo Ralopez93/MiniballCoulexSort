@@ -24,7 +24,6 @@ void PrintInput() {
   cout << "srim = " << srim << endl;
   cout << "cutfile = " << cutfilename << endl;
   cout << "calfile = " << calfilename << endl;
-  cout << "clu_tune = " << clu_tune << endl;
   cout << "np_only = " << np_only << endl;
   if (print_angles)
     cout << "Priting crystal angles for each cluster." << endl;
@@ -33,8 +32,13 @@ void PrintInput() {
   else
     cout << "Using detected particle energy for velocity calculation" << endl;
 
-  if (usekin && usekinloss)
-    cout << "Using SRIM to calculate energy loss in target." << endl;
+  if (usekinloss)
+    cout << "Using SRIM to adjust velocity calculation from detected energy with two-body kinematics." << endl;
+
+  if (emit_outside_targ)
+    cout << "Assuming gamma emission taking place OUTSIDE target on average." << endl;
+  else
+    cout << "Assuming gamma emission taking place INSIDE target on average." << endl;
 
   cout << "\nOutputfile = " << outputfilename << endl << endl;
 
@@ -64,10 +68,10 @@ int main(int argc, char *argv[]) {
   interface->Add("-spededist", "Relative distance of SPEDE and target (mm)", &spededist);
   interface->Add("-bg_frac", "Ratio of prompt and random for background subtraction", &bg_frac);
   interface->Add("-srim", "Directory containing the SRIM files", &srim);
+  interface->Add("-emit_outside_targ", "Assume gamma emission outisde target.", &emit_outside_targ);
   interface->Add("-usekin", "Use two-body kinematics for particle velocity.", &usekin);
-  interface->Add("-usekinloss", "Use energy loss with SRIM when using two-body kinematics for velocity.", &usekinloss);
+  interface->Add("-usekinloss", "Adjust velocity calculation from energy with two-body kinematics.", &usekinloss);
   interface->Add("-cal", "Calibration file", &calfilename);
-  interface->Add("-clutune", "Cluster switch for angletuning", &clu_tune);
   interface->Add("-print_angles", "Print crystal angles of each cluster", &print_angles);
   interface->Add("-cur_run_nbr", "Tag data with the given run number", &cur_run_nbr);
   interface->Add("-np_only", "Only sort entries with np number of particles, skipping rest.", &np_only);
@@ -175,6 +179,7 @@ int main(int argc, char *argv[]) {
     spededist = config->GetValue("spededist", 23.6);
     bg_frac = config->GetValue("bg_frac", -1.0);
     srim = config->GetValue("srim", "./srim");
+    emit_outside_targ = config->GetValue("emit_outside_targ", false);
     usekin = config->GetValue("usekin", false);
     usekinloss = config->GetValue("usekinloss", false);
     np_only = config->GetValue("np_only", 0);
@@ -200,10 +205,10 @@ int main(int argc, char *argv[]) {
     clx.spededist = spededist;
     clx.bg_frac = bg_frac;
     clx.srim = srim;
+    clx.emit_outside_targ = emit_outside_targ;
     clx.usekin = usekin;
     clx.usekinloss = usekinloss;
     clx.calfile = calfilename;
-    clx.clu_tune = clu_tune;
     clx.print_angles = print_angles;
     clx.cur_run_nbr = cur_run_nbr;
     clx.np_only = np_only;
