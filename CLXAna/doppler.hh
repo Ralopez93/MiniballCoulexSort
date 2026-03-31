@@ -69,7 +69,6 @@ public:
   float GetCDDist(float Th);
   float	GetCDOffset();
   float	GetCDDeadLayer();
-  float	GetSpedeDist();
   float	GetPTh( float ring, int sector );
   float	GetPPhi( int quad, int seg, int sector );
   float	GetTTh( float BTheta );
@@ -104,7 +103,7 @@ public:
 
   static string	convertInt( int number );
   static string	convertFloat( float number );
-	
+
   inline float u_mass() { return 931494.0038; };
   inline bool	UseKin() { return usekin; };
   inline bool	UseKinLoss() { return usekinloss; };

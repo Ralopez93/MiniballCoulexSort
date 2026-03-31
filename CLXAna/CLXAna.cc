@@ -19,7 +19,6 @@ void PrintInput() {
   cout << "cdoffset = " << cdoffset << " degrees" << endl;
   cout << "deadlayer = " << deadlayer << " mm" << endl;
   cout << "contaminant = " << contaminant << " mg/cm2" << endl;
-  cout << "spededist = " << spededist << " mm" << endl;
   cout << "bg_frac = " << bg_frac << endl;
   cout << "srim = " << srim << endl;
   cout << "cutfile = " << cutfilename << endl;
@@ -63,9 +62,8 @@ int main(int argc, char *argv[]) {
   interface->Add("-depth", "Depth of interation in target (mg/cm^2)", &depth);
   interface->Add("-cddist", "Relative distance of CD and target (mm)", &cddist);
   interface->Add("-cdoffset", "Rotation of CD detector about phi from vertical (deg)", &cdoffset);
-  interface->Add("-deadlayer", "Thickness of Si dead layer (mm)", &deadlayer);
+  interface->Add("-deadlayer", "Thickness of Si dead layer (mg/cm^2)", &deadlayer);
   interface->Add("-contaminant", "Thickness of contaminant layer on target (mg/cm^2)", &contaminant);
-  interface->Add("-spededist", "Relative distance of SPEDE and target (mm)", &spededist);
   interface->Add("-bg_frac", "Ratio of prompt and random for background subtraction", &bg_frac);
   interface->Add("-srim", "Directory containing the SRIM files", &srim);
   interface->Add("-emit_outside_targ", "Assume gamma emission outisde target.", &emit_outside_targ);
@@ -176,7 +174,6 @@ int main(int argc, char *argv[]) {
     cdoffset = config->GetValue("cdoffset", 242.6);
     deadlayer = config->GetValue("deadlayer", 0.0007);
     contaminant = config->GetValue("contaminant", -1.0);
-    spededist = config->GetValue("spededist", 23.6);
     bg_frac = config->GetValue("bg_frac", -1.0);
     srim = config->GetValue("srim", "./srim");
     emit_outside_targ = config->GetValue("emit_outside_targ", false);
@@ -202,7 +199,6 @@ int main(int argc, char *argv[]) {
     clx.cdoffset = cdoffset;
     clx.deadlayer = deadlayer;
     clx.contaminant = contaminant;
-    clx.spededist = spededist;
     clx.bg_frac = bg_frac;
     clx.srim = srim;
     clx.emit_outside_targ = emit_outside_targ;

@@ -9,6 +9,12 @@
 #define PID_BEAM 0
 #define PID_TARG 1
 
+// Max target distance being the radius of the actual target, which according to 
+// https://twiki.cern.ch/twiki/bin/viewauth/Miniball/DocForTargetFrame seems to be 5mm.
+// Needs to be converted to mg / cm^2 first.
+// Target Density = 1.1344E1 g/cm^3 = 1.1344E4 mg/cm^3
+#define MAX_TARG_DIST 0.5 * 1.1344E4 // Now in mg/cm^2
+
 TRandom3 doppler::rand = 1;
 
 // True if we assume that, on average, the gamma was emitted after traversing the target.
@@ -339,30 +345,28 @@ float doppler::GetCDOffset() {
   return cdoffset;
 }
 
-float doppler::GetSpedeDist() {
-
-  /// Return distance of Spede detector in mm
-
-  return spededist;
-}
-
 float doppler::GetCDDeadLayer() {
 
-  /// Return dead layer of the Si in mm
+  /// Return dead layer of the Si in mg/cm^2
 
   return deadlayer;
 }
 
 float doppler::GetCDDist(float Th) {
 
-  /// Return distance in Si due to dead layer in mm
+  /// Return distance in Si due to dead layer in mg/cm^2
 
   return TMath::Abs(deadlayer / TMath::Cos(Th) );
 }
 
+/**
+ * @brief Get distance in target in mg/cm^2, after reaction.
+ * 
+ * @param Th Particle scattering angle.
+ *
+ * @return Distance traversed in target. 
+ */
 float doppler::GetTargDist(float Th) {
-
-  /// Return distance in target in mm, after reaction.
 
   return TMath::Abs((thick - depth) / TMath::Cos(Th) );
 }
@@ -669,8 +673,7 @@ float doppler::GetTEnB(float BEn, float BTheta) {
 
 /**
  * @brief Returns the energy loss at a given initial energy and distance travelled in the target,
- *  the contaminant layer or Si dead layer Ei is the initial energy in keV,
- *  return value is also in keV dist is the distance travelled in the target in mg/cm2.
+ *  the contaminant layer or Si dead layer.
  * 
  *  opt = 0 calculates normal energy loss as particle moves through target (default)
  *  opt = 1 calculates energy increase, i.e. tracing particle back to reaction point
@@ -683,8 +686,8 @@ float doppler::GetTEnB(float BEn, float BTheta) {
  *  109Ag_Si.txt, for combo = "BT", "TT", "BS" and "TS", repsectively. The
  *  srim file should be in units of MeV/(mg/cm^2)
  * 
- * @param Ei Initial energy.
- * @param dist distance traveled.
+ * @param Ei Initial energy in keV.
+ * @param dist the distance travelled in the target in mg/cm2.
  * @param opt Option.
  * @param combo Reaction combo.
  * 
@@ -692,10 +695,18 @@ float doppler::GetTEnB(float BEn, float BTheta) {
  */
 float doppler::GetELoss(float Ei, float dist, int opt, string combo) {
 
+  // Limit the distance the particle can travel inside the target.
+  // Just a safety precaution.
+  // In general, the particle is stopped after traversing a few micrometers worth of material.
+  // Which is a much smaller distance than the 5 mm radius of the target.
+  if (((combo == "BT") || (combo == "TT")) && (dist > MAX_TARG_DIST))
+    dist = MAX_TARG_DIST;
+
   double dedx = 0;
   int Nmeshpoints = 100; // number of steps to take in integration
   double dx = dist / (double) Nmeshpoints;
   double E = Ei;
+  int idx = -1;
 
   for (int i = 0; i < Nmeshpoints; i++) {
 
@@ -703,17 +714,19 @@ float doppler::GetELoss(float Ei, float dist, int opt, string combo) {
       break; // when we fall below 1 MeV we assume maximum energy loss
 
     if (combo == "BT")
-      dedx = gSP[0]->Eval(E);
+      idx = 0;
     else if (combo == "TT")
-      dedx = gSP[1]->Eval(E);
+      idx = 1;
     else if (combo == "BS")
-      dedx = gSP[2]->Eval(E);
+      idx = 2;
     else if (combo == "TS")
-      dedx = gSP[3]->Eval(E);
+      idx = 3;
     else if (combo == "BC")
-      dedx = gSP[4]->Eval(E);
+      idx = 4;
     else if (combo == "TC")
-      dedx = gSP[5]->Eval(E);
+      idx = 5;
+
+    dedx = gSP[idx]->Eval(E);
 
     if (opt == 1)
       E += 1000. * dedx * dx;
@@ -925,11 +938,14 @@ float doppler::GetTEnKin(float CoM) {
  * @return The calculated beam energy. 
  */
 float doppler::GetBEnKinB(float BTh, bool kinflag) {
-  float BEn = GetBThCoM(BTh, kinflag);
+  float BEn = GetBEnKin(GetBThCoM(BTh, kinflag));
 
   // If emitted outside target, then subtract energy due to interaction with target.
-  if (emit_outside_targ)
+  if (emit_outside_targ) {
     BEn -= GetELoss(BEn, GetTargDist(BTh), 0, "BT" );
+    if (BEn < 0.1)
+      BEn = 0.1;
+  }
 
   return BEn;
 }
@@ -950,8 +966,11 @@ float doppler::GetBEnKinT(float TTh, bool kinflag) {
   float BTh = GetBThLabT(TTh);
 
   // If emitted outside target, then subtract energy due to interaction with target.
-  if (emit_outside_targ)
+  if (emit_outside_targ) {
     BEn -= GetELoss(BEn, GetTargDist(BTh), 0, "BT" );
+    if (BEn < 0.1) 
+      BEn = 0.1;
+  }
 
   return BEn;
 }
@@ -972,8 +991,11 @@ float doppler::GetTEnKinB(float BTh, bool kinflag) {
   float TTh = GetTThLabB(BTh);
 
   // If emitted outside target, then subtract energy due to interaction with target.
-  if (emit_outside_targ)
+  if (emit_outside_targ) {
     TEn -= GetELoss(TEn, GetTargDist(TTh), 0, "TT" );
+    if (TEn < 0.1)
+      TEn = 0.1;
+  }
 
   return TEn;
 }
@@ -993,8 +1015,11 @@ float doppler::GetTEnKinT(float TTh, bool kinflag) {
   float TEn = GetTEnKin(GetTThCoM(TTh, kinflag));
 
   // If emitted outside target, then subtract energy due to interaction with target.
-  if (emit_outside_targ)
+  if (emit_outside_targ) {
     TEn -= GetELoss(TEn, GetTargDist(TTh), 0, "TT" );
+    if (TEn < 0.1)
+      TEn = 0.1;
+  }
 
   return TEn;
 }
