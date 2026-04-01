@@ -18,7 +18,7 @@ using namespace std;
 
 int j = 0;
 
-string outputfilename, configfilename, cutfilename, calfilename;
+string outputfilename, configfilename, cutfilename, calfilename, intcalfilename;
 vector<string> inputfilenames;
 
 float		GammaEnergy;

@@ -35,6 +35,10 @@ using namespace std;
 # include "MBGeometry.hh"
 #endif
 
+#ifndef INT_CAL_HH
+# include "IntCal.hh"
+#endif
+
 typedef struct _Crystal {
   double theta;
   double phi;
@@ -54,10 +58,11 @@ class doppler : public TObject {
 
 public:
 
-  void	ExpDefs( int Zb_, float Ab_, int Zt_, float At_, float Eb_, float Ex_, float thick_,
-		 float depth_, float cddist_, float cdoffset_, float deadlayer_,
-		 float contaminant_, float spededist_, TCutG *Bcut_, TCutG *Tcut_,
-		 string srimfile_, bool emit_outside_targ_, bool usekin_, bool usekinloss_, string calfile_ );
+  void ExpDefs(int Zb_, float Ab_, int Zt_, float At_, float Eb_, float Ex_, float thick_,
+		           float depth_, float cddist_, float cdoffset_, float deadlayer_,
+		           float contaminant_, float spededist_, TCutG *Bcut_, TCutG *Tcut_,
+		           string srimfile_, bool emit_outside_targ_, bool usekin_, bool usekinloss_,
+               string calfile_, string intcalfile_);
   int Cut(float PEn, float ring, float PTheta );
   int Cut_2p(float PEn1, float ring1, float PTheta1,
 			       float PEn2, float ring2, float PTheta2 );
@@ -100,6 +105,10 @@ public:
   bool	stoppingpowers( string opt );
   void	reactionEnergy();
   void mbAngles(std::vector<Cluster> &clusters); // JP: re-define MB angles for tuning
+  bool setupIntCal();
+  void freeIntCal();
+  bool doIntCal(float &En, bool isBeam);
+
 
   static string	convertInt( int number );
   static string	convertFloat( float number );
@@ -131,9 +140,10 @@ private:
   bool	usekin;			///< flag to use two-body kinematics for velocity
   bool	usekinloss;	///< flag to adjust velocity calculation from energy with two-body kinematics
   string calfile; // re-load MB geometry parameters
+  string intcalfile;
   Calibration *Cal;
+  IntCal *intcal;
   MBGeometry mbg;
   ClassDef(doppler,1);
-
 };
 #endif

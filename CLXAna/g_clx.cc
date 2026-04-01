@@ -35,7 +35,8 @@ void g_clx::Loop(string outputfilename) {
   // Create doppler instance and set experimental parameters
   doppler dc;
   dc.ExpDefs(Zb, Ab, Zt, At, Eb, Ex, thick, depth, cddist, cdoffset, deadlayer,
-             contaminant, spededist, Bcut, Tcut, srim, emit_outside_targ, usekin, usekinloss, calfile);
+             contaminant, spededist, Bcut, Tcut, srim, emit_outside_targ, usekin, usekinloss,
+             calfile, intcalfile);
 
   dc.mbAngles(clusters); // re-define MB angles
 
@@ -88,6 +89,16 @@ void g_clx::Loop(string outputfilename) {
   cout << "Looping over events...\n";
   Int_t nbytes = 0, nbs = 0;
   Int_t skipFactor = 1;
+
+  if (intcalfile.size() != 0) {
+    if (dc.setupIntCal()) {
+      cout << "Internal calibration has been setup." << endl;
+    } else {
+      cerr << "Failed to setup internal calibration." << endl;
+      return;
+    }
+  }
+
   for (Long64_t jentry = 0; jentry < fChain->GetEntries() / skipFactor; jentry++) {
 
     Long64_t ientry = LoadTree(jentry);
@@ -124,6 +135,9 @@ void g_clx::Loop(string outputfilename) {
                laser, pen, nf, nb, sector, det, td, time, cur_run_nbr, np_only); // particle info
 
   }
+
+  if (intcalfile.size() != 0)
+    dc.freeIntCal();
 
   out->Write();
 }

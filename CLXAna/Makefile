@@ -43,14 +43,18 @@ MKDIR_P:
 	mkdir -p $(BIN_DIR) $(LIB_DIR)
 
 OBJECTS = Calibration.o \
-	 MBGeometry.o \
-	 g_clx.o \
+	 				IntCal.o \
+	 				MBGeometry.o \
+	 				g_clx.o \
           doppler.o \
           hists.o \
           SpedeGeometry.o \
           CLXAnaDict.o 
 
 Calibration.o: Calibration.cc Calibration.hh
+	$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+IntCal.o: IntCal.cc IntCal.hh
 	$(CPP) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 MBGeometry.o: MBGeometry.cc MBGeometry.hh
@@ -80,12 +84,13 @@ clean:
 
 # Root stuff
 DEPENDENCIES =	Calibration.hh \
-		MBGeometry.hh \
-		g_clx.hh \
-               doppler.hh \
-               hists.hh \
-               SpedeGeometry.hh \
-               RootLinkDef.h 
+								IntCal.hh \
+								MBGeometry.hh \
+								g_clx.hh \
+               	doppler.hh \
+               	hists.hh \
+               	SpedeGeometry.hh \
+               	RootLinkDef.h 
 
 CLXAnaDict.o: CLXAnaDict.cc
 	 $(CPP) $(CFLAGS) $(INCLUDES) -c $<

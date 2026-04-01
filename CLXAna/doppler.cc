@@ -23,7 +23,8 @@ void doppler::ExpDefs(int Zb_, float Ab_, int Zt_, float At_, float Eb_,
                       float Ex_, float thick_, float depth_, float cddist_,
                       float cdoffset_, float deadlayer_, float contaminant_,
                       float spededist_, TCutG *Bcut_, TCutG *Tcut_,
-                      string srimfile_, bool emit_outside_targ_, bool usekin_, bool usekinloss_, string calfile_) {
+                      string srimfile_, bool emit_outside_targ_, bool usekin_, bool usekinloss_,
+                      string calfile_, string intcalfile_) {
 
   /// Initialisation of experimental definitions from command line of config
   /// file
@@ -47,6 +48,7 @@ void doppler::ExpDefs(int Zb_, float Ab_, int Zt_, float At_, float Eb_,
   usekin = usekin_;
   usekinloss = usekinloss_;
   calfile = calfile_;
+  intcalfile = intcalfile_;
 
   return;
 }
@@ -368,7 +370,13 @@ float doppler::GetCDDist(float Th) {
  */
 float doppler::GetTargDist(float Th) {
 
-  return TMath::Abs((thick - depth) / TMath::Cos(Th) );
+  // Handling both forward and backscattering.
+  if (TMath::Cos(Th) > 0)
+    return TMath::Abs((thick - depth) / TMath::Cos(Th));
+  else if (TMath::Cos(Th) < 0)
+    return TMath::Abs(depth / TMath::Cos(Th));
+  else
+    return MAX_TARG_DIST;
 }
 
 int doppler::GetZb() {
@@ -577,6 +585,9 @@ float doppler::GetBEnB(float BEn, float BTheta) {
   if (!emit_outside_targ)
     Eproj += GetELoss(Eproj, GetTargDist(BTheta), 1, "BT" );
 
+  if (intcal != nullptr)
+    doIntCal(Eproj, true);
+
   return Eproj;
 }
 
@@ -613,6 +624,9 @@ float doppler::GetBEnT(float TEn, float TTheta) {
   if (angle < 0.501 * TMath::Pi() && angle > 0.499 * TMath::Pi())
     return 0.1; // stopped
 
+  if (intcal != nullptr)
+    doIntCal(Eproj, true);
+
   return Eproj;
 }
 
@@ -634,6 +648,9 @@ float doppler::GetTEnT(float TEn, float TTheta) {
   // If emitted outside target, then do not add energy due to interaction with target.
   if (!emit_outside_targ)
     Etarg += GetELoss(Etarg, GetTargDist(TTheta), 1, "TT" );
+
+  if (intcal != nullptr)
+    doIntCal(Etarg, false);
 
   return Etarg;
 }
@@ -667,6 +684,9 @@ float doppler::GetTEnB(float BEn, float BTheta) {
   float angle = GetTTh(BTheta);
   if (angle < 0.501 * TMath::Pi() && angle > 0.499 * TMath::Pi())
     return 0.1; // stopped
+
+  if (intcal != nullptr)
+    doIntCal(Etarg, false);
 
   return Etarg;
 }
@@ -1116,4 +1136,63 @@ string doppler::convertFloat(float number) {
   ss << number;
   return ss.str();
 }
+
+/**
+ * @brief Setup intcal object. Should be done at the start of the program.
+ * 
+ * @return True if intcal was successfully setup.
+ */
+bool doppler::setupIntCal() {
+  if (intcalfile.size() == 0)
+    return false;
+
+  intcal = new IntCal(intcalfile);
+
+  if (intcal == nullptr) {
+    cerr << "Failed to allocate new IntCal object" << endl;
+    return false;
+  }
+
+  if (!intcal->Setup()) {
+    cerr << "Failed to setup intcal object" << endl;
+    free(intcal);
+    intcal = nullptr;
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @brief Free the intcal object. Should be done at the end
+ * of the program.
+ */
+void doppler::freeIntCal() {
+  if (intcal != nullptr) {
+    free(intcal);
+    intcal = nullptr;
+  }
+}
+
+/**
+ * @brief Perform internal calibration for a given energy.
+ * 
+ * @param En Referens to energy to do internal calibration on.
+ * 
+ * @return True if successful, else false.
+ */
+bool doppler::doIntCal(float &En, bool isBeam) {
+  if (intcal == nullptr) {
+    cout << "Could not do internal calibration, object not setup properly." << endl;
+    return false;
+  }
+
+  if (isBeam)
+    En += intcal->getBFactor(En);
+  else
+    En += intcal->getTFactor(En);
+
+  return true;
+}
+
 #endif

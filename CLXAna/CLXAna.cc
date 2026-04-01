@@ -23,6 +23,7 @@ void PrintInput() {
   cout << "srim = " << srim << endl;
   cout << "cutfile = " << cutfilename << endl;
   cout << "calfile = " << calfilename << endl;
+  cout << "intcalfile = " << intcalfilename << endl;
   cout << "np_only = " << np_only << endl;
   if (print_angles)
     cout << "Priting crystal angles for each cluster." << endl;
@@ -70,6 +71,7 @@ int main(int argc, char *argv[]) {
   interface->Add("-usekin", "Use two-body kinematics for particle velocity.", &usekin);
   interface->Add("-usekinloss", "Adjust velocity calculation from energy with two-body kinematics.", &usekinloss);
   interface->Add("-cal", "Calibration file", &calfilename);
+  interface->Add("-intcal", "Internal Calibration file", &intcalfilename);
   interface->Add("-print_angles", "Print crystal angles of each cluster", &print_angles);
   interface->Add("-cur_run_nbr", "Tag data with the given run number", &cur_run_nbr);
   interface->Add("-np_only", "Only sort entries with np number of particles, skipping rest.", &np_only);
@@ -179,6 +181,7 @@ int main(int argc, char *argv[]) {
     emit_outside_targ = config->GetValue("emit_outside_targ", false);
     usekin = config->GetValue("usekin", false);
     usekinloss = config->GetValue("usekinloss", false);
+    intcalfilename = config->GetValue("intcal", "");
     np_only = config->GetValue("np_only", 0);
     print_angles = config->GetValue("print_angles", false);
   }
@@ -205,6 +208,7 @@ int main(int argc, char *argv[]) {
     clx.usekin = usekin;
     clx.usekinloss = usekinloss;
     clx.calfile = calfilename;
+    clx.intcalfile = intcalfilename;
     clx.print_angles = print_angles;
     clx.cur_run_nbr = cur_run_nbr;
     clx.np_only = np_only;
