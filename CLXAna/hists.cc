@@ -406,12 +406,16 @@ void hists::doRoutine2P(float GEn, float GTh, float GPh, int GCluid, int GCid,
 
     /** NOTE: Currently disabled. If we have a broken 2p event, skip. Need to be able to
      * decide which of the two events gets which gammas, rather than adding same gammas twice.
+     * - First particle?
+     * - Particle closest or furthest in time?
+     * - Completely random? 
      */
-    std::cout << "Encountered broken 2p event, skipping." << std::endl;
-    return;
 
-    // handle "broken" 2p event: either adjacent quads, time diff outside window, or identical pid
-    for (int j = 0; j < 2; j++) {
+    std::cout << "Encountered broken 2p event. Accepting first particle and rejecting the other." << std::endl;
+
+    // Handle "broken" 2p event: either adjacent quads, time diff outside window, or identical pid.
+    // Currently, just saving the first particle, since we do not want to duplicate gammas.
+    for (int j = 0; j < 1; j++) {
       // break into two 1p events
       laser = laser_passed[j];
       np = 1;
@@ -506,6 +510,7 @@ void hists::doRoutine2P(float GEn, float GTh, float GPh, int GCluid, int GCid,
       phr[1] = php[0];
 
       tree->Fill();
+      break;
     }
   }
 }
@@ -538,6 +543,9 @@ void hists::doRoutineXP(float GEn, float GTh, float GPh, int GCluid, int GCid,
 
   /** NOTE: Currently disabled. If we have an xp event, skip. Need to be able to
    * decide which of the events gets which gammas, rather than adding same gammas multiple times.
+   * 
+   * Example of a bad encounter:
+   *  3p event, all split into 1p events. Gamma count is trippled.
    */
   std::cout << "Encountered " << np_passed << "p event, skipping." << std::endl;
   return;
@@ -845,8 +853,6 @@ void hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
     std::string err_msg = "Too many gammas (" + std::to_string(ng) + "): must adjust container size.";
     throw std::runtime_error(err_msg);
   }
-
-  // Introduce a flag that lets us only sort 1P events, skipping 2+?
 
   if ((np_passed == 1) &&
       ((np_only == 0) || (np_only == np_passed))) {
