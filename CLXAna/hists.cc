@@ -440,7 +440,7 @@ bool hists::FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid,
 
   resetVar();
 
-  for (int i = 0; i < PEn.size(); i++) {
+  for (size_t i = 0; i < PEn.size(); i++) {
     // Saving theta early. Since it is randomly assigned (within some interval),
     // multiple calls to GetPTh() may prove problematic.
 

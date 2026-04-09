@@ -9,10 +9,16 @@
 #define PID_BEAM 0
 #define PID_TARG 1
 
+// CD pitch in milimeters
+#define PITCH 2.0
+// CD pitch for the active area. There's a 0.1 mm gap between rings.
+#define ACT_PITCH 1.9
+
 // Max target distance being the radius of the actual target, which according to 
-// https://twiki.cern.ch/twiki/bin/viewauth/Miniball/DocForTargetFrame seems to be 5mm.
+// https://twiki.cern.ch/twiki/bin/viewauth/Miniball/DocForTargetFrame seems to be 0.5 cm.
 // Needs to be converted to mg / cm^2 first.
 // Target Density = 1.1344E1 g/cm^3 = 1.1344E4 mg/cm^3
+
 #define MAX_TARG_DIST 0.5 * 1.1344E4 // Now in mg/cm^2
 
 TRandom3 doppler::rand = 1;
@@ -49,6 +55,7 @@ void doppler::ExpDefs(int Zb_, float Ab_, int Zt_, float At_, float Eb_,
   usekinloss = usekinloss_;
   calfile = calfile_;
   intcalfile = intcalfile_;
+  rng = TRandom3(1);
 
   return;
 }
@@ -409,13 +416,14 @@ float doppler::GetPTh(float ring, int sector) {
     // r0 = 9.0 mm
     // nf is ring number, goes from 0 to 15.
     // So for example, r1 = r0 + 0.5 * 2 (basically adding half the pitch).
-    double angle_lower = TMath::ATan((9.0 + (15.5 - ring) * 2.0 - 1.0) / cddist);
-    double angle_upper = TMath::ATan((9.0 + (15.5 - ring) * 2.0 + 1.0) / cddist);
+    double radius = 9.0 + (15.5 - ring) * PITCH;
+
+    double angle_lower = TMath::ATan((radius - ACT_PITCH * 0.5) / cddist);
+    double angle_upper = TMath::ATan((radius + ACT_PITCH * 0.5) / cddist);
 
     // Avoid using global seed. Just want to keep the Theta calculations consistent.
     // Set to static to avoid resetting the RNG.
     // Variable scope is now same as program and not function.
-    static TRandom3 rng(1);
     angle = rng.Uniform(angle_lower, angle_upper);
   }
 

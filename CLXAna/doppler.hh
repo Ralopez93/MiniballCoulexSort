@@ -144,6 +144,7 @@ private:
   Calibration *Cal;
   IntCal *intcal;
   MBGeometry mbg;
+  TRandom3 rng;
   ClassDef(doppler,1);
 };
 #endif
