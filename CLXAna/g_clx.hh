@@ -105,7 +105,6 @@ class g_clx : public TObject {
   string    calfile;
   string    intcalfile;
 	bool       print_angles;             // Print crystal angles of each cluster
-	int 			np_only;					///< Only sort entries with np number of particles, skipping rest.
 
 	// List of branches
 	TBranch        *b_mbevts_fUniqueID;   //!

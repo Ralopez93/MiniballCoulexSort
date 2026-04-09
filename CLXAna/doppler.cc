@@ -97,36 +97,36 @@ void doppler::mbAngles(std::vector<Cluster> &clusters) {
   }
 }
 
-bool doppler::stoppingpowers(bool BT, bool TT, bool BS, bool TS, bool BC, bool TC) {
+bool doppler::prepSP(bool BT, bool TT, bool BS, bool TS, bool BC, bool TC) {
 
   /// Initialisation of stopping powers
-  bool success = true;
   gErrorIgnoreLevel = kWarning;
   for (int i = 0; i < 6; i++)
     gSP[i] = new TGraph();
-  if (BT)
-    success *= stoppingpowers("BT");
-  if (TT)
-    success *= stoppingpowers("TT");
-  if (BS)
-    success *= stoppingpowers("BS");
-  if (TS)
-    success *= stoppingpowers("TS");
-  //  cout<<success<<" "<<endl;
-  if (BC && contaminant > 0)
-    success *= stoppingpowers("BC");
-  if (TC && contaminant > 0)
-    success *= stoppingpowers("TC");
-  //  cout<<success<<" "<<contaminant<<endl;
 
-  if (success)
-    reactionEnergy();
+  if (BT && !loadSP("BT"))
+    return false;
+  if (TT && !loadSP("TT"))
+    return false;
+  if (BS && !loadSP("BS"))
+    return false;
+  if (TS && !loadSP("TS"))
+    return false;
+
+  // Unused -----------------
+  if (BC && (contaminant > 0) && !loadSP("BC"))
+    return false;
+  if (TC && (contaminant > 0) && !loadSP("TC"))
+    return false;
+  // ------------------------
+
+  reactionEnergy();
   cout << "reactionEnergy done" << endl;
 
-  return success;
+  return true;
 }
 
-bool doppler::stoppingpowers(string opt) {
+bool doppler::loadSP(string opt) {
 
   /// Open stopping power files and make TGraphs of data
   /// naming convention of files...
@@ -153,17 +153,13 @@ bool doppler::stoppingpowers(string opt) {
     srimfilename += "/" + convertInt(Ab + 0.5) + gElName[Zb - 1];
     title += convertInt(Ab + 0.5) + gElName[Zb - 1];
 
-  }
-
-  else if (opt.substr(0, 1) == "T") {
+  } else if (opt.substr(0, 1) == "T") {
 
     srimfilename += "/" + convertInt(At + 0.5) + gElName[Zt - 1];
     title += convertInt(At + 0.5) + gElName[Zt - 1];
     index++;
 
-  }
-
-  else {
+  } else {
 
     cout << "opt must equal BT, TT, BS, TS, BC or TC \n";
     return false;
@@ -176,27 +172,21 @@ bool doppler::stoppingpowers(string opt) {
     title += " in " + convertInt(At + 0.5) + gElName[Zt - 1];
     title += ";Ion energy [keV];Stopping power [MeV/(mg/cm^2)]";
 
-  }
-
-  else if (opt.substr(1, 1) == "S") {
+  } else if (opt.substr(1, 1) == "S") {
 
     srimfilename += "_Si.txt";
     title += " in the Si dead layer";
     title += ";Ion energy [keV];Stopping power [MeV/(mg/cm^2)]";
     index += 2;
 
-  }
-
-  else if (opt.substr(1, 1) == "C") {
+  } else if (opt.substr(1, 1) == "C") {
 
     srimfilename += "_contaminant.txt";
     title += " in the contaminant layer";
     title += ";Ion energy [keV];Stopping power [MeV/(mg/cm^2)]";
     index += 4;
 
-  }
-
-  else {
+  } else {
 
     cout << "opt must equal BT, TT, BS or TS \n";
     return false;
@@ -236,8 +226,7 @@ bool doppler::stoppingpowers(string opt) {
     // Read in data
     line_ss.str("");
     line_ss << line;
-    line_ss >> BEn >> units >> nucl >> elec >> tmp_dbl >> tmp_str >> tmp_dbl >>
-        tmp_str;
+    line_ss >> BEn >> units >> nucl >> elec >> tmp_dbl >> tmp_str >> tmp_dbl >> tmp_str;
 
     if (units == "eV")
       BEn *= 1E-3;
@@ -304,9 +293,9 @@ int doppler::Cut(float PEn, float ring, float PTheta) {
 }
 
 /**
- * @brief Check if entry passes the 2 particle condition. It calls Cut() twice
- * with each of the two particles passed to this function. If one of them is a
- * particle and one of them is a target, you get a good return.
+ * @brief Check if entry passes the 2 particle condition.
+ * It calls Cut() twice  with each of the two particles passed to this function.
+ * If one of them is a particle and one of them is a target, you get a 'good' return.
  * 
  * @param PEn1 Energy for particle 1.
  * @param ring1 Annular (front) strip ID for particle 1.
@@ -321,21 +310,14 @@ int doppler::Cut_2p(float PEn1, float ring1, float PTheta1,
                     float PEn2, float ring2, float PTheta2) {
 
   int identity = PID_UNKNOWN;
+  int pid1 = Cut(PEn1, ring1, PTheta1);
+  int pid2 = Cut(PEn2, ring2, PTheta2);
 
-  if ((Cut(PEn1, ring1, PTheta1) == PID_BEAM) &&
-      (Cut(PEn2, ring2, PTheta2) == PID_TARG)) {
+  if ((pid1 == PID_BEAM) && (pid2 == PID_TARG)) {
     identity = PID_BEAM;
-  } else if ((Cut(PEn1, ring1, PTheta1) == PID_TARG) &&
-             (Cut(PEn2, ring2, PTheta2) == PID_BEAM)) {
+  } else if ((pid1 == PID_TARG) && (pid2 == PID_BEAM)) {
     identity = PID_TARG;
   }
-
-    // JP: test and check later
-    // If the angle is small, it's unlikely to be a real 2h event
-    // if( nf1 > 10 || nf2 > 10 ){
-    //   cout<<"in doppler.cc: rings "<<nf1<<" vs "<<nf2<<endl;
-    //   identity = -1;
-    // }
 
   return identity;
 }

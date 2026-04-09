@@ -24,7 +24,6 @@ void PrintInput() {
   cout << "cutfile = " << cutfilename << endl;
   cout << "calfile = " << calfilename << endl;
   cout << "intcalfile = " << intcalfilename << endl;
-  cout << "np_only = " << np_only << endl;
   if (print_angles)
     cout << "Priting crystal angles for each cluster." << endl;
   if (usekin)
@@ -74,7 +73,6 @@ int main(int argc, char *argv[]) {
   interface->Add("-intcal", "Internal Calibration file", &intcalfilename);
   interface->Add("-print_angles", "Print crystal angles of each cluster", &print_angles);
   interface->Add("-cur_run_nbr", "Tag data with the given run number", &cur_run_nbr);
-  interface->Add("-np_only", "Only sort entries with np number of particles, skipping rest.", &np_only);
 
   interface->CheckFlags(argc, argv);
 
@@ -182,7 +180,6 @@ int main(int argc, char *argv[]) {
     usekin = config->GetValue("usekin", false);
     usekinloss = config->GetValue("usekinloss", false);
     intcalfilename = config->GetValue("intcal", "");
-    np_only = config->GetValue("np_only", 0);
     print_angles = config->GetValue("print_angles", false);
   }
 
@@ -211,7 +208,6 @@ int main(int argc, char *argv[]) {
     clx.intcalfile = intcalfilename;
     clx.print_angles = print_angles;
     clx.cur_run_nbr = cur_run_nbr;
-    clx.np_only = np_only;
     cout << "Input parameters:" << endl;
     PrintInput();
   } else {

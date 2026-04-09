@@ -101,8 +101,8 @@ public:
   float GetGPh(int cid, int sid); 
   float	Beta( float Ek, float m );
   float	DC( float PEn, float PTh, float PPhi, float GTh, float GPhi, float A );
-  bool	stoppingpowers( bool BT, bool TT, bool BS, bool TS, bool BC, bool TC );
-  bool	stoppingpowers( string opt );
+  bool	prepSP( bool BT, bool TT, bool BS, bool TS, bool BC, bool TC );
+  bool	loadSP( string opt );
   void	reactionEnergy();
   void mbAngles(std::vector<Cluster> &clusters); // JP: re-define MB angles for tuning
   bool setupIntCal();

@@ -41,6 +41,5 @@ bool		usekin = false;		          ///< Flag to use two-body kinematics for partic
 bool		usekinloss = false;		      ///< Flag to adjust velocity calculation from energy with two-body kinematics
 bool    print_angles = false;       ///< Print crystal angles of each cluster
 int     cur_run_nbr = 0;            ///< Tag data with current run number. 
-int     np_only = 0;                ///< Only sort entries with np number of particles, skipping rest. 
 
 void PrintInput();

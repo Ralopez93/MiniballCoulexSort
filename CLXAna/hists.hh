@@ -19,8 +19,13 @@ using namespace std;
 
 using namespace std;
 
-/// A class for making Coulex analysis histograms
+// Particle array length is 2 to accomodate beam and target.
+#define P_ARR_LEN 2
 
+// Gamma array length is currently set to 24. So far no entry has contained that many.
+#define G_ARR_LEN 24
+
+/// A class for making Coulex analysis histograms
 /// The hists class is used to define all histograms for the analysis.
 /// Crucially it defines a set of functions to be called, rather than
 /// filling each histogram individually with every call in g_clx::Loop.
@@ -29,14 +34,6 @@ using namespace std;
 /// Please try to use these functions as much as is reasonably possible.
 
 class hists {
-
-	// Declare histos : 
-	// B = Beam detection 
-	// T = Target detection 
-	// 2hB = both detected - Beam part
-	// 2hT = both detected - Target part
-	// p=prompt r=random
-
 public:
 
   TTree  *tree; // JP: tree output for quick analysis
@@ -45,32 +42,32 @@ public:
   int np;
   int run_nbr;    // For a lack of better solutions, going to tag each entry with the run number. Woo.
   double tdpp;    // Particle-Particle time difference in 25 ns timestamps.
-  double time[2]; // Particle timestamp in 25 ns timestamps.
-  int pid[2];
-  int quad[2];
-  int ring[2];
-  int sect[2];
-  double ep[2];
-  double er[2];
-  double thp[2];
-  double php[2];
-  double thr[2];
-  double phr[2];
-	double com[2];
+  double time[P_ARR_LEN]; // Particle timestamp in 25 ns timestamps.
+  int pid[P_ARR_LEN];
+  int quad[P_ARR_LEN];
+  int ring[P_ARR_LEN];
+  int sect[P_ARR_LEN];
+  double ep[P_ARR_LEN];
+  double er[P_ARR_LEN];
+  double thp[P_ARR_LEN];
+  double php[P_ARR_LEN];
+  double thr[P_ARR_LEN];
+  double phr[P_ARR_LEN];
+	double com[P_ARR_LEN];
 
   int ng;
-  double td[24];  // Particle-gamma time difference in 25 ns timestamps
-  double eg[24]; // calibrated, not dc'ed gamma energy in keV
-  double ebg[24]; // calibrated and dc-ed gamma energy to beam kinematics in keV
-  double etg[24]; // calibrated and dc-ed gamma energy to target kinematics in keV
-  int clu[24];
-  int cry[24]; // crystal ID from 0 to 23
-  int seg[24]; // segment ID from 0 to 6 (0: core-only/ambiguous events)
-  double thg[24]; // theta of gamma in lab frame
-  double phg[24]; // phi of gamma in lab frame
-  int tpg[24]; // smallest particle-gamma time difference (if 2 particles)
-  double abg[24]; // angle difference between beam-like particle and gamma in degrees, 0-180
-  double atg[24]; // angle difference between target-like particle and gamma in degrees, 0-180
+  double td[G_ARR_LEN];  // Particle-gamma time difference in 25 ns timestamps
+  double eg[G_ARR_LEN]; // calibrated, not dc'ed gamma energy in keV
+  double ebg[G_ARR_LEN]; // calibrated and dc-ed gamma energy to beam kinematics in keV
+  double etg[G_ARR_LEN]; // calibrated and dc-ed gamma energy to target kinematics in keV
+  int clu[G_ARR_LEN];
+  int cry[G_ARR_LEN]; // crystal ID from 0 to 23
+  int seg[G_ARR_LEN]; // segment ID from 0 to 6 (0: core-only/ambiguous events)
+  double thg[G_ARR_LEN]; // theta of gamma in lab frame
+  double phg[G_ARR_LEN]; // phi of gamma in lab frame
+  int tpg[G_ARR_LEN]; // smallest particle-gamma time difference (if 2 particles)
+  double abg[G_ARR_LEN]; // angle difference between beam-like particle and gamma in degrees, 0-180
+  double atg[G_ARR_LEN]; // angle difference between target-like particle and gamma in degrees, 0-180
   
 	// Variables to be set in g_clx.C via Set_xxx functions
 	float ppwin;
@@ -88,10 +85,10 @@ public:
 
 	// fill functions
   // fill Tree
-  void FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid, int GSid, vector <float> GCor_GEn, vector <float> GCor_GTh,
+  bool FillTree(float GEn, float GTh, float GPh, int GCluid, int GCid, int GSid, vector <float> GCor_GEn, vector <float> GCor_GTh,
 		vector <float> GCor_GPh, vector <int> GCor_GCluID, vector <int> GCor_GCid, vector <int> GCor_GSid, vector <float> GCor_Gtd,
 		vector <int> Laser, vector <float> PEn, vector<int> Pnf, vector<int> Pnb, vector<int> Psec,
-		vector <int> Pquad, vector <float> Ptd, vector<double> Ptimes, int cur_run_nbr, int np_only);
+		vector <int> Pquad, vector <float> Ptd, vector<double> Ptimes, int cur_run_nbr);
   
 private:
   vector<int> laser_passed;
@@ -104,24 +101,17 @@ private:
   vector<int> Ppid_passed;
   vector<float> PTheta_passed;
   vector<double> times_passed;
-	//ClassDef(hists,1);
 
   void resetVar();
-  bool isGood2p(int quad_diff, float time_diff, float ppwin, int cut2);
-  void doRoutine1P(float GEn, float GTh, float GPh, int GCluid, int GCid,
+  bool doRoutine1P(float GEn, float GTh, float GPh, int GCluid, int GCid,
                    int GSid, vector<float> GCor_GEn, vector<float> GCor_GTh,
                    vector<float> GCor_GPh, vector<int> GCor_GCluID,
                    vector<int> GCor_GCid, vector<int> GCor_GSid,
                    vector<float> GCor_Gtd);
-  void doRoutine2P(float GEn, float GTh, float GPh, int GCluid, int GCid,
+  bool doRoutine2P(float GEn, float GTh, float GPh, int GCluid, int GCid,
                    int GSid, vector<float> GCor_GEn, vector<float> GCor_GTh,
                    vector<float> GCor_GPh, vector<int> GCor_GCluID,
                    vector<int> GCor_GCid, vector<int> GCor_GSid,
                    vector<float> GCor_Gtd);
-  void doRoutineXP(float GEn, float GTh, float GPh, int GCluid, int GCid,
-                   int GSid, vector<float> GCor_GEn, vector<float> GCor_GTh,
-                   vector<float> GCor_GPh, vector<int> GCor_GCluID,
-                   vector<int> GCor_GCid, vector<int> GCor_GSid,
-                   vector<float> GCor_Gtd, int np_passed);
 };
 #endif

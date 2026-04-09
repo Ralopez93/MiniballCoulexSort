@@ -47,7 +47,7 @@ void g_clx::Loop(string outputfilename) {
 
   if (print_angles) {
     std::cout << "Printing angles for Crystals: (theta, phi)." << std::endl;
-    for (int i = 0; i < clusters.size(); i++) {
+    for (size_t i = 0; i < clusters.size(); i++) {
       std::cout << "Cluster " << i << "\n"
                 << "\tCrystal 0 (" << clusters[i].crystals[0].theta << ", " << clusters[i].crystals[0].phi << ")\n"
                 << "\tCrystal 1 (" << clusters[i].crystals[1].theta << ", " << clusters[i].crystals[1].phi << ")\n"
@@ -58,8 +58,7 @@ void g_clx::Loop(string outputfilename) {
 
   // Create stopping power curves from the srim output files
   // Comment out to use the default parameters in doppler.hh
-  // stoppingpowers( BT, TT, BA, TA, BC, TC )
-  if (!dc.stoppingpowers(true, true, true, true, false, false)) {
+  if (!dc.prepSP(true, true, true, true, false, false)) {
     cout << "Definition of stopping powers failed" << endl;
     return;
   }
@@ -99,8 +98,11 @@ void g_clx::Loop(string outputfilename) {
     }
   }
 
-  for (Long64_t jentry = 0; jentry < fChain->GetEntries() / skipFactor; jentry++) {
+  Long64_t evt_acc = 0;
+  Long64_t evt_rej = 0;
 
+  for (Long64_t jentry = 0; jentry < fChain->GetEntries() / skipFactor; jentry++) {
+    bool result = false;
     Long64_t ientry = LoadTree(jentry);
 
     if (ientry < 0)
@@ -125,19 +127,29 @@ void g_clx::Loop(string outputfilename) {
     // adjust MB angles according to cid, sid
     tha = dc.GetGTh(cid, sid);
     pha = dc.GetGPh(cid, sid);
-    for (int j = 0; j < gcor_gen.size(); j++) {
+    for (size_t j = 0; j < gcor_gen.size(); j++) {
       gcor_tha[j] = dc.GetGTh(gcor_cid[j], gcor_sid[j]);
       gcor_pha[j] = dc.GetGPh(gcor_cid[j], gcor_sid[j]);
     }
 
-    h.FillTree(gen, tha, pha, cluid, cid, sid, // single gamma
-               gcor_gen, gcor_tha, gcor_pha, gcor_cluid, gcor_cid, gcor_sid, gcor_gtd, // correlated gamma
-               laser, pen, nf, nb, sector, det, td, time, cur_run_nbr, np_only); // particle info
+    result = h.FillTree(gen, tha, pha, cluid, cid, sid, // single gamma
+                        gcor_gen, gcor_tha, gcor_pha, gcor_cluid, gcor_cid, gcor_sid, gcor_gtd, // correlated gamma
+                        laser, pen, nf, nb, sector, det, td, time, cur_run_nbr); // particle info
 
+    if (result)
+      evt_acc++;
+    else
+      evt_rej++;
   }
 
   if (intcalfile.size() != 0)
     dc.freeIntCal();
+
+  // Keep a tally of how many events are good/bad.
+  std::cout << "Number of processed events: " << (evt_acc + evt_rej) << ".\n"
+            << "Number of accepted events: " << evt_acc << ".\n"
+            << "Numebr of rejected events: " << evt_rej << ".\n"
+            << std::endl;
 
   out->Write();
 }
