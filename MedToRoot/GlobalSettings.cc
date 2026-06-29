@@ -156,8 +156,8 @@ void GlobalSettings::ReadUnpackerSettings() {
   fReferencePointOfCoincidenceWindow =
       fSettings->GetValue("Coincidence.Reference", 0.);
 
-  int tempLowEdge = fSettings->GetValue("EbisWindow.LowerEdge", 0);
-  int tempUppEdge = fSettings->GetValue("EbisWindow.UpperEdge", 800);
+  unsigned int tempLowEdge = fSettings->GetValue("EbisWindow.LowerEdge", 0);
+  unsigned int tempUppEdge = fSettings->GetValue("EbisWindow.UpperEdge", 800);
 
   if (tempLowEdge >= tempUppEdge) {
     cerr << __PRETTY_FUNCTION__
@@ -182,6 +182,14 @@ void GlobalSettings::ReadUnpackerSettings() {
   // convert from us into dgf timing (25 ns units)
   fEbisWindowLowerEdge *= 1000 / 25;
   fEbisWindowUpperEdge *= 1000 / 25;
+
+  cout << "Unpacking with EBIS Window Lower Edge = "
+       << fEbisWindowLowerEdge
+       << " ticks,"
+       << " EBIS Window Upper Edge = "
+       << fEbisWindowUpperEdge
+       << " ticks."
+       << endl;
 
   fLowestCoincidence = (long long)(fReferencePointOfCoincidenceWindow -
                                    fCoincidenceWindowWidth / 2);
