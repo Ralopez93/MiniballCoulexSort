@@ -664,15 +664,15 @@ void EventBuilder::BuildEvent() {
     // loop over all event in the buffer and fill them into the tree
     for (size_t i = 0; i < eventBuffer->NumberOfBuiltEvents(); i++) {
       // check whether event is in the user-defined ebis window
-      if ((Settings->EbisWindowLowerEdge() <
-               eventBuffer->GetSortedEvent(i)->GetTime() - EbisTime &&
-           eventBuffer->GetSortedEvent(i)->GetTime() - EbisTime <
-               Settings->EbisWindowUpperEdge()) ||
-          Settings->SourceRun()) {
+      if ((
+            Settings->EbisWindowLowerEdge() < eventBuffer->GetSortedEvent(i)->GetTime() - EbisTime
+            &&
+            eventBuffer->GetSortedEvent(i)->GetTime() - EbisTime < Settings->EbisWindowUpperEdge()
+          )
+          || Settings->SourceRun()) {
         OnBeamEvent = eventBuffer->GetSortedEvent(i);
 
-        // if the scaler data is to be included and if there actually is scaler
-        // data
+        // if the scaler data is to be included and if there actually is scaler data
         if (Settings->IncludeScaler() && unpackedEvent->ScalerData()) {
           fScaler = unpackedEvent->GetScaler();
           fDgfScaler = unpackedEvent->GetDgfScaler();
@@ -718,9 +718,7 @@ void EventBuilder::BuildEvent() {
 
         TotalNumberOfBytesCommittedToOnBeamTree += NumberOfBytesCommitted;
 
-      }
-
-      else {
+      } else {
         OnBeamBackgroundEvent = eventBuffer->GetSortedEvent(i);
 
         NumberOfBytesCommitted = OnBeamBackgroundTree->Fill();
@@ -752,10 +750,7 @@ void EventBuilder::BuildEvent() {
             NumberOfBytesCommitted;
       }
     }
-
-  }
-
-  else {
+  } else {
     // loop over all event in the buffer and fill them into the tree
     for (size_t i = 0; i < eventBuffer->NumberOfBuiltEvents(); i++) {
       OffBeamEvent = eventBuffer->GetSortedEvent(i);

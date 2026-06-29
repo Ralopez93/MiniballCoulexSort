@@ -1,4 +1,5 @@
 #include "GlobalSettings.hh"
+#include "limits.h"
 
 using namespace std;
 using namespace TMath;
@@ -155,12 +156,32 @@ void GlobalSettings::ReadUnpackerSettings() {
   fReferencePointOfCoincidenceWindow =
       fSettings->GetValue("Coincidence.Reference", 0.);
 
-  fEbisWindowLowerEdge = fSettings->GetValue("EbisWindow.LowerEdge", 0);
-  fEbisWindowLowerEdge *=
-      1000 / 25;  // convert from us into dgf timing (25 ns units)
-  fEbisWindowUpperEdge = fSettings->GetValue("EbisWindow.UpperEdge", 800);
-  fEbisWindowUpperEdge *=
-      1000 / 25;  // convert from us into dgf timing (25 ns units)
+  int tempLowEdge = fSettings->GetValue("EbisWindow.LowerEdge", 0);
+  int tempUppEdge = fSettings->GetValue("EbisWindow.UpperEdge", 800);
+
+  if (tempLowEdge >= tempUppEdge) {
+    cerr << __PRETTY_FUNCTION__
+         << ": Invalid EBIS edge settings! Lower edge exceeds or equals the upper edge!"
+         << " Lower edge: " << tempLowEdge << " us,"
+         << " Upper edge: " << tempUppEdge << " us."
+         << endl;
+    exit(1);
+  }
+
+  if ((tempUppEdge * 1000 / 25) > USHRT_MAX) {
+    cerr << __PRETTY_FUNCTION__
+         << ": Invalid EBIS edge settings! Upper edge too large and will lead to overflow!"
+         << " Upper edge: " << tempUppEdge << " us."
+         << endl;
+    exit(1);
+  }
+
+  fEbisWindowLowerEdge = tempLowEdge;
+  fEbisWindowUpperEdge = tempUppEdge;
+
+  // convert from us into dgf timing (25 ns units)
+  fEbisWindowLowerEdge *= 1000 / 25;
+  fEbisWindowUpperEdge *= 1000 / 25;
 
   fLowestCoincidence = (long long)(fReferencePointOfCoincidenceWindow -
                                    fCoincidenceWindowWidth / 2);
